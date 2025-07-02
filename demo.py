@@ -58,6 +58,7 @@ class VelomaDemo:
         # self.instrument.theremin.play_note(65, 1, 2)  # Test note
         # self.instrument.theremin.play_note(64, 1, 2)  # Test note
         # self.instrument.theremin.play_note(62, 1, 2)  # Test note
+
        
         try:
             while self.is_running:
