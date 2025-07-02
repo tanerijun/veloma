@@ -5,13 +5,16 @@ import math
 
 
 class VelomaInstrument:
-    """Virtual Theremin-like instrument using SCAMP."""
+    """Virtual Theremin-like  using SCAMP."""
 
     def __init__(self):
         self.session = sc.Session()
-        self.session.tempo = 120
+        self.session.tempo = 377
 
         self.theremin = self.session.new_part("theremin")
+        # self.theremin = self.session.new_part("piano")
+        self.theremin.send_midi_cc(64,1)
+
 
         # Audio parameters
         self.current_pitch = 60  # Middle C
@@ -19,17 +22,17 @@ class VelomaInstrument:
         self.is_playing = False
 
         # Hand position mapping ranges
-        self.pitch_range = (40, 80)  # MIDI note range
+        self.pitch_range = (48-1, 84+1)  # MIDI note range
         self.volume_range = (0.0, 1.0)
 
         # Smoothing parameters
-        self.pitch_smoothing = 0.1
-        self.volume_smoothing = 0.1
+        self.pitch_smoothing = 1.0
+        self.volume_smoothing = 1.0
 
         # Threading
         self.audio_thread = None
         self.should_stop = False
-        self.note_duration = 0.3
+        self.note_duration = 0.01
         self.hands_detected = False
 
     def start_audio(self):
@@ -45,6 +48,8 @@ class VelomaInstrument:
 
     def stop_audio(self):
         """Stop the audio processing."""
+        self.theremin.end_all_notes()
+        self.theremin.send_midi_cc(64,1)
         self.should_stop = True
         if self.audio_thread:
             self.audio_thread.join(timeout=1.0)
@@ -53,7 +58,6 @@ class VelomaInstrument:
     def update_from_vision(self, hand_data: Optional[Dict[str, Any]]):
         """
         Update audio parameters based on hand tracking data.
-
         Args:
             hand_data: Dictionary containing hand position information
         """
@@ -62,7 +66,8 @@ class VelomaInstrument:
             self.hands_detected = False
             self.is_playing = False
             return
-
+        # print("O*&^%$#%^&*(&^%$#%^&*()UYGTFRDESW$D%RFTG&YHUJIOMHYUGT@#$&$^)")
+        # print("Hand data received:", hand_data)
         hands = hand_data['hands']
         self.hands_detected = True
 
@@ -74,7 +79,8 @@ class VelomaInstrument:
             # Map Y position to pitch (inverted - higher position = higher pitch)
             target_pitch = self._map_range(1.0 - palm_y, 0.0, 1.0, *self.pitch_range)
             self.current_pitch = self._smooth_value(self.current_pitch, target_pitch, self.pitch_smoothing)
-
+            # self.current_pitch = self._round_value(self.current_pitch)
+    
         if len(hands) >= 2:
             # Use second hand for volume control (distance from first hand)
             secondary_hand = hands[1]
@@ -97,18 +103,24 @@ class VelomaInstrument:
     def _audio_loop(self):
         """Main audio processing loop."""
         print("Audio loop started")
-
+        min_terminate_volume = 0.5  # Minimum volume to avoid silence
         while not self.should_stop:
-            if self.hands_detected and self.is_playing and self.current_volume > 0.01:
+            self.theremin.send_midi_cc(64,0)
+            if self.hands_detected and self.is_playing and self.current_volume > min_terminate_volume:
                 self.theremin.play_note(
                     pitch=self.current_pitch,
                     volume=self.current_volume,
-                    length=self.note_duration
+                    length=self.note_duration,
+                    properties="legato",
+                    blocking=False
                 )
-
+               
+            else:
+                self.theremin.end_all_notes()
             # Sleep for a bit less than note duration to create overlapping notes
-            sc.wait(self.note_duration * 0.7)
-
+            # sc.wait(self.note_duration * 0.3)
+            sc.wait(self.note_duration)
+            # sc.wait(0.1)
         print("Audio loop ended")
 
     @staticmethod
@@ -124,3 +136,7 @@ class VelomaInstrument:
     def _smooth_value(current: float, target: float, smoothing: float) -> float:
         """Apply smoothing to value changes."""
         return current + (target - current) * smoothing
+    @staticmethod
+    def _round_value(current: float) -> int:
+        """Apply smoothing to value changes."""
+        return int(current)

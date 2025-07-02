@@ -18,7 +18,6 @@ import time
 from app.vision import HandTracker
 from app.music import VelomaInstrument
 
-
 class VelomaDemo:
 
     def __init__(self):
@@ -34,7 +33,7 @@ class VelomaDemo:
 
         self.instrument.start_audio()
         print("Playing test note...")
-        self.instrument.theremin.play_note(60, 0.8, 2.0)  # Test note
+        # self.instrument.theremin.play_note(72, 1, 2.0)  # Test note
         time.sleep(0.5)
         print("Audio test complete!")
 
@@ -44,7 +43,7 @@ class VelomaDemo:
         print("  • Use two hands for advanced control")
         print("  • Press SPACEBAR: Toggle audio on/off")
         print("  • Press 'q': Quit")
-        print("=" * 50)
+        print("= " * 50)
 
         if not self.tracker.start_camera():
             print("Failed to start camera!")
@@ -56,6 +55,10 @@ class VelomaDemo:
         print("Camera and audio started successfully!")
         print("Move your hands to make music!")
 
+        # self.instrument.theremin.play_note(65, 1, 2)  # Test note
+        # self.instrument.theremin.play_note(64, 1, 2)  # Test note
+        # self.instrument.theremin.play_note(62, 1, 2)  # Test note
+       
         try:
             while self.is_running:
                 # Get hand data
@@ -68,6 +71,7 @@ class VelomaDemo:
                     else:
                         # Fade out when audio disabled
                         self.instrument.update_from_vision({'hands': []})
+                      
 
                     # Display frame with landmarks
                     frame = hand_data['frame']
@@ -110,15 +114,15 @@ class VelomaDemo:
         # Hand count
         hand_count = len(hand_data.get('hands', []))
         cv2.putText(frame, f"Hands: {hand_count}", (10, 60),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
         # Current parameters
         pitch = self.instrument.current_pitch
         volume = self.instrument.current_volume
         cv2.putText(frame, f"Pitch: {pitch:.1f}", (10, 90),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
         cv2.putText(frame, f"Volume: {volume:.2f}", (10, 120),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
         # Instructions
         instructions = [
