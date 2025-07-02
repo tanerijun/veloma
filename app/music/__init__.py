@@ -112,26 +112,36 @@ class VelomaInstrument:
             print(" hands_detected:", self.hands_detected,"is_playing", self.is_playing,
                   " current_volume:", self.current_volume, "player_flag:", played_flag)
          
-            
-            if self.hands_detected and self.is_playing and self.current_volume > min_terminate_volume:
-                played_flag=True
-                self.theremin.send_midi_cc(64,1)
-                self.theremin.play_note(
-                    pitch=self.current_pitch,
-                    volume=self.current_volume,
-                    length=self.note_duration,
-                    properties="legato",
-                    # properties="Staccato",
-                    blocking=False
-                )
-                sc.wait(self.note_duration*0.97)
+            self.theremin.play_note(60,1,10,blocking=True)
+            print(1)
+            sc.wait(10)
+            self.theremin.play_note(62,1,10,blocking=True)
+            print(2)
+            self.theremin.play_note(64,1,10,blocking=True)
+            print(3)
+            self.theremin.play_note(62,1,10,blocking=True)
+            print(4)
+            self.theremin.play_note(60,1,10,blocking=True)
+            print(5)
+            # if self.hands_detected and self.is_playing and self.current_volume > min_terminate_volume:
+            #     played_flag=True
+            #     self.theremin.send_midi_cc(64,1)
+            #     self.theremin.play_note(
+            #         pitch=self.current_pitch,
+            #         volume=self.current_volume,
+            #         length=self.note_duration,
+            #         properties="legato",
+            #         # properties="Staccato",
+            #         blocking=False
+            #     )
+            #     sc.wait(self.note_duration*0.97)
                
                 
-            if self.current_volume < min_terminate_volume:
-                print("----------resetplaying----------")
-                self.theremin.send_midi_cc(64,0)
-                self.theremin.end_all_notes()
-                played_flag=False
+            # if self.current_volume < min_terminate_volume:
+            #     print("----------resetplaying----------")
+            #     self.theremin.send_midi_cc(64,0)
+            #     self.theremin.end_all_notes()
+            #     played_flag=False
             # Sleep for a bit less than note duration to create overlapping notes
             # sc.wait(self.note_duration)
             # sc.wait(self.note_duration)
