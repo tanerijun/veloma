@@ -71,6 +71,8 @@ class VelomaInstrument:
         hands = hand_data['hands']
         self.hands_detected = True
 
+
+
         if len(hands) >= 1:
             # Use first hand for pitch control (vertical position)
             primary_hand = hands[0]
@@ -92,9 +94,7 @@ class VelomaInstrument:
             target_volume = self._map_range(distance, 0.0, 0.5, *self.volume_range)
             self.current_volume = self._smooth_value(self.current_volume, target_volume, self.volume_smoothing)
         else:
-            self.theremin.send_midi_cc(64,0)
-            self.theremin.end_all_notes()
-            # NO hand - use X position for volume
+            # - use X position for volume
             palm_x, palm_y = hands[0]['palm_center']
             target_volume = self._map_range(palm_x, 0.0, 1.0, *self.volume_range)
             self.current_volume = self._smooth_value(self.current_volume, target_volume, self.volume_smoothing)
@@ -106,23 +106,11 @@ class VelomaInstrument:
         """Main audio processing loop."""
         print("Audio loop started")
         min_terminate_volume = 0.5  # Minimum volume to avoid silence
-        played_flag=False
+        played_flag=False 
         while not self.should_stop:
             self.theremin.send_midi_cc(64,0)
-            print(" hands_detected:", self.hands_detected,"is_playing", self.is_playing,
-                  " current_volume:", self.current_volume, "player_flag:", played_flag)
-         
-            # self.theremin.play_note(60,1,10,blocking=True)
-            # print(1)
-            # sc.wait(10)
-            # self.theremin.play_note(62,1,10,blocking=True)
-            # print(2)
-            # self.theremin.play_note(64,1,10,blocking=True)
-            # print(3)
-            # self.theremin.play_note(62,1,10,blocking=True)
-            # print(4)
-            # self.theremin.play_note(60,1,10,blocking=True)
-            # print(5)
+            # print(" hands_detected:", self.hands_detected,"is_playing", self.is_playing," current_volume:", self.current_volume, "player_flag:", played_flag)
+
             if self.hands_detected and self.is_playing and self.current_volume > min_terminate_volume:
                 played_flag=True
                 self.theremin.send_midi_cc(64,1)
@@ -142,8 +130,7 @@ class VelomaInstrument:
                 self.theremin.send_midi_cc(64,0)
                 self.theremin.end_all_notes()
                 played_flag=False
-            # Sleep for a bit less than note duration to create overlapping notes
-            # sc.wait(self.note_duration)
+                
         print("Audio loop ended")
 
     @staticmethod
