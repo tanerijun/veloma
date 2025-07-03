@@ -157,7 +157,7 @@ class VelomaDemo:
         info_parts.append(f"Volume: {volume:.2f}")
 
         # Print on same line (overwrite previous)
-        print(f"\r{' | '.join(info_parts)}", end='', flush=True)
+        # print(f"\r{' | '.join(info_parts)}\n", end='', flush=True)
 
     def cleanup(self):
         """Clean up resources."""
