@@ -1,0 +1,91 @@
+format EX：
+<which .sf2>: <istrument name>
+
+defult: theremin
+defult: Pan Flute
+defult: Solo Vox
+defult: Square Wave 
+defult: Saw Wave
+defult: Violin LP3
+defult: Organ 1
+defult: Synth Str 1
+defult: SuperSawA   #電子音 lound
+
+theremin_high: Theremin
+
+theremin_trill: Thin Theremin #loud but trill
+theremin_trill: Stereo Theremin
+
+FluidR3_GM: Saw Wave  #super loud
+FluidR3_GM: Whistle   #super close to thermin
+FluidR3_GM: Sine Wave #super close to thermin
+FluidR3_GM: Flute
+FluidR3_GM: Cello
+FluidR3_GM: Church Organ
+FluidR3_GM: Clarinet
+FluidR3_GM: Oboe
+FluidR3_GM: English Horn
+FluidR3_GM: Trumpet
+FluidR3_GM: Muted Trumpet
+FluidR3_GM: Bandoneon
+
+--------------------------------------
+self.theremin = self.session.new_part("theremin")
+self.theremin = self.session.new_part("Pan Flute")
+self.theremin = self.session.new_part("Solo Vox")
+self.theremin = self.session.new_part("Square Wave ")
+self.theremin = self.session.new_part("Saw Wave")
+self.theremin = self.session.new_part("Violin LP3")
+self.theremin = self.session.new_part("Organ 1")
+self.theremin = self.session.new_part("Synth Str 1")
+self.theremin = self.session.new_part("SuperSawA")
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
+self.session = sc.Session(default_soundfont=soundFontPath_theremin_high)
+# or
+# self.session = sc.Session(default_soundfont="app/music/soundFonts/theremin_high.sf2")
+self.theremin = self.session.new_part("Theremin")
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+soundFontPath_theremin_trill = os.path.join(current_dir, "soundFonts", "theremin_trill.sf2")
+self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
+self.theremin = self.session.new_part("Thin Theremin")
+self.theremin = self.session.new_part("Stereo Theremin")
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+soundFontPath_FluidR3_GM = os.path.join(current_dir, "soundFonts", "FluidR3_GM.sf2")
+self.session = sc.Session(default_soundfont=soundFontPath_theremin_FluidR3_GM)
+self.theremin = self.session.new_part("Saw Wave")
+self.theremin = self.session.new_part("SWhistle")
+self.theremin = self.session.new_part("Sine Wave")
+self.theremin = self.session.new_part("Flute")
+self.theremin = self.session.new_part("Cello")
+self.theremin = self.session.new_part("Church Organ")
+self.theremin = self.session.new_part("Clarinet")
+self.theremin = self.session.new_part("Oboe")
+self.theremin = self.session.new_part("English Horn")
+self.theremin = self.session.new_part("Trumpet")
+self.theremin = self.session.new_part("Muted Trumpet")
+self.theremin = self.session.new_part("Bandoneon")
+
+
+-----------------fun---------------------
+defult: Telephone
+defult: Helicopter
+
+Ohh Voices
+Ahh Choir
+----------------trash---------------------
+theremin_high: Etherwave   #quite
+theremin_trill: Thick Theremin #same as Stereo Theremin
+FluidR3_GM: Theremin  # will quiter and quiter finally disappear
+
+synths
+beats
+
+
+--------------------------------------------
+###
+defult is fluidsynth???

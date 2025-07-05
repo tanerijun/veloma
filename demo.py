@@ -18,6 +18,9 @@ import time
 from app.vision import HandTracker
 from app.music import VelomaInstrument
 
+import scamp as sc
+from scamp_extensions.pitch import Scale
+import random
 class VelomaDemo:
 
     def __init__(self):
@@ -54,12 +57,7 @@ class VelomaDemo:
 
         print("Camera and audio started successfully!")
         print("Move your hands to make music!")
-
-        # self.instrument.theremin.play_note(65, 1, 2)  # Test note
-        # self.instrument.theremin.play_note(64, 1, 2)  # Test note
-        # self.instrument.theremin.play_note(62, 1, 2)  # Test note
-
-       
+     
         try:
             while self.is_running:
                 # Get hand data

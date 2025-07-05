@@ -2,24 +2,38 @@ import math
 import threading
 import time
 from typing import Any, Dict, Optional
-
+import os
 import scamp as sc
+from scamp_extensions.pitch import Scale
+
+# paths to sound fonts
+current_dir = os.path.dirname(os.path.abspath(__file__))
+soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
+soundFontPath_theremin_trill = os.path.join(current_dir, "soundFonts", "theremin_trill.sf2")
+# soundFontPath_FluidR3_GM = os.path.join(current_dir, "soundFonts", "FluidR3_GM.sf2")
 
 
+# if not os.path.exists(soundFontPath_theremin_high):
+#     raise FileNotFoundError(f"SoundFont not found at: {soundFontPath_theremin_high}")
 class VelomaInstrument:
     """Virtual Theremin-like instrument using SCAMP with real-time parameter control."""
 
     def __init__(self):
-        self.session = sc.Session()
+        # self.session = sc.Session()
+        # self.session =sc.Session(default_soundfont=soundFontPath_theremin_high)
+        # self.session = sc.Session(default_soundfont="theremin_high.sf2")
+        self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
+        # self.session = sc.Session(default_soundfont=soundFontPath_FluidR3_GM)
         self.session.tempo = 120
 
-        self.theremin = self.session.new_part("theremin")
+        # self.theremin = self.session.new_part("Sine Wave")
+        self.theremin = self.session.new_part("Whistle")
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
         self.current_pitch = 60  # Middle C
         self.current_volume = 0.5
-        self.target_pitch = 60
+        self.target_pitch = 60.0
         self.target_volume = 0.5
 
         # Note control
@@ -30,18 +44,26 @@ class VelomaInstrument:
         self.is_note_playing = False
 
         # Hand position mapping ranges
-        self.pitch_range = (59, 73)
+        self.glide_mode=False
+        self.start_key = 60.0  
+        self.octave_range = 1
+        self.scale= Scale.major(self.start_key)
+        # self.scale= Scale.natural_minor(self.start_key)
+        # self.scale= Scale.blues(self.start_key)
+        print(range(self.scale.num_steps))
+        self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12)  #for glide
         self.volume_range = (0.0, 1.0)
+        
 
         # Smoothing parameters - much higher for real-time response
-        self.pitch_smoothing = 0.9  # Faster pitch response
+        self.pitch_smoothing = 1  # Faster pitch response
         self.volume_smoothing = 1  # Faster volume response
 
         # Threading
         self.audio_thread = None
         self.should_stop = False
         self.hands_detected = False
-        self.min_volume_threshold = 0.5  # Minimum volume to start/maintain note
+        self.min_volume_threshold = 0.3  # Minimum volume to start/maintain note
 
     def start_audio(self):
         """Start the audio processing thread."""
@@ -84,28 +106,23 @@ class VelomaInstrument:
             primary_hand = hands[0]
             palm_x, palm_y = primary_hand["palm_center"]
 
-            pitch_x_clamped = max(0.5, min(1.0, palm_x))
-            self.target_pitch = self._map_range(
-                pitch_x_clamped, 0.5, 1.0, *self.pitch_range
-            )
-            
-            volume_y_clamped = max(0.5, min(1.0, palm_y))
-            self.target_volume = self._map_range(
-                1.0 - volume_y_clamped, 0.0, 0.5, *self.volume_range
-            )
-            # if len(hands) >= 2:
-            #     # Use distance between hands for volume control
-            #     secondary_hand = hands[1]
-            #     palm_x2, palm_y2 = secondary_hand["palm_center"]
-            #     primary_palm_x, primary_palm_y = hands[0]["palm_center"]
+            if self.glide_mode:
+                # pitch_x_clamped = max(0.5, min(1.0, palm_x))
+                self.target_pitch = self._map_range(
+                    palm_x, 0.5, 1.0, *self.pitch_range
+                )
+            else:
+                mapped_index_float = self._map_range(palm_x, 0.5, 1.0, 0, self.scale.num_steps * self.octave_range )
+                mapped_index = int(round(mapped_index_float))
+                self.target_pitch=self.scale[mapped_index]
+                # print("Mapped index:", mapped_index, "Mapped pitch:", self.scale[mapped_index])
 
-            #     # Calculate distance between hands
-            #     distance = math.sqrt(
-            #         (palm_x2 - primary_palm_x) ** 2 + (palm_y2 - primary_palm_y) ** 2
-            #     )
-            #     self.target_volume = self._map_range(
-            #         distance, 0.0, 0.5, *self.volume_range
-            #     )
+            
+            # volume_y_clamped = max(0.5, min(1.0, palm_y))
+            self.target_volume = self._map_range(
+                1.0 - palm_y, 0.0, 0.5, *self.volume_range
+            )
+          
             if len(hands) >= 2:
                 if hands[0]["palm_center"][0] > hands[1]["palm_center"][0]:
                     right_hand = hands[0]
@@ -114,22 +131,28 @@ class VelomaInstrument:
                     right_hand = hands[1]
                     left_hand = hands[0]
 
-                
-                # 音高：右手（看 x）
+
                 pitch_x = right_hand["palm_center"][0]
-                # 0.5~1
-                pitch_x_clamped = max(0.5, min(1.0, pitch_x))
-                self.target_pitch = self._map_range(
-                    pitch_x_clamped, 0.5, 1.0, *self.pitch_range
-                )
-                
+                if self.glide_mode:
+                    # 音高：右手（看 x）
+                   
+                    # 0.5~1
+                    # pitch_x_clamped = max(0.5, min(1.0, pitch_x))
+                    self.target_pitch = self._map_range(
+                        pitch_x, 0.5, 1.0, *self.pitch_range
+                    )
+                else:
+                    mapped_index_float = self._map_range(pitch_x, 0.5, 1.0, 0, self.scale.num_steps * self.octave_range )
+                    mapped_index = int(round(mapped_index_float))
+                    self.target_pitch=self.scale[mapped_index]
+                    
 
                 # 音量：左手
                 volume_y = left_hand["palm_center"][1]
-                volume_y_clamped = max(0.5, min(1.0, volume_y))
+                # volume_y_clamped = max(0.5, min(1.0, volume_y))
                 # 因為越上面音量越大
                 self.target_volume = self._map_range(
-                    1.0 - volume_y_clamped, 0.0, 0.5, *self.volume_range
+                    1.0 - volume_y, 0.0, 0.5, *self.volume_range
                 )
 
     def _audio_loop(self):
@@ -173,16 +196,17 @@ class VelomaInstrument:
         """Start a new continuous note."""
         try:
             self.theremin.send_midi_cc(64, 1)
-
+            
             self.current_note = self.theremin.start_note(
-                pitch=self.current_pitch, volume=1
+                pitch=self.current_pitch, volume=self.current_volume
             )
             self.current_note_amplify = self.theremin.start_note(
-                pitch=self.current_pitch, volume=1
+                pitch=self.current_pitch, volume=self.current_volume
             )
             self.current_note_amplify2 = self.theremin.start_note(
-                pitch=self.current_pitch, volume=1
+                pitch=self.current_pitch, volume=self.current_volume
             )
+          
             self.is_note_playing = True
             print(
                 f"Started note: pitch={self.current_pitch:.1f}, volume={self.current_volume:.2f}"
@@ -198,11 +222,12 @@ class VelomaInstrument:
             try:
                 
                 self.current_note.change_pitch(self.current_pitch)
-                self.current_note.change_volume(1)
+                self.current_note.change_volume(self.current_volume)
                 self.current_note_amplify.change_pitch(self.current_pitch)
-                self.current_note_amplify.change_volume(1)
+                self.current_note_amplify.change_volume(self.current_volume)
                 self.current_note_amplify2.change_pitch(self.current_pitch)
-                self.current_note_amplify2.change_volume(1)
+                self.current_note_amplify2.change_volume(self.current_volume)
+
             except Exception as e:
                 print(f"Error updating note parameters: {e}")
                 self._stop_current_note()
@@ -225,6 +250,8 @@ class VelomaInstrument:
                 print(f"Error stopping note: {e}")
                 # Force cleanup
                 self.current_note = None
+                self.current_note_amplify = None
+                self.current_note_amplify2 = None
                 self.is_note_playing = False
                 self.theremin.end_all_notes()
 
@@ -245,7 +272,9 @@ class VelomaInstrument:
         return current + (target - current) * smoothing
 
 
-
+    @staticmethod
+    def _get_scale_index(current: float) -> int:
+        return int(current)
     @staticmethod
     def _round_value(current: float) -> int:
         return int(current)
