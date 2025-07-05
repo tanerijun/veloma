@@ -13,8 +13,11 @@ defult: SuperSawA   #電子音 lound
 
 theremin_high: Theremin
 
-theremin_trill: Thin Theremin #loud but trill
 theremin_trill: Stereo Theremin
+theremin_trill: Thin Theremin #loud but trill
+ 
+
+7777777: replace FluidR3_GM 牛逼7777777
 
 FluidR3_GM: Saw Wave  #super loud
 FluidR3_GM: Whistle   #super close to thermin

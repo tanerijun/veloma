@@ -10,6 +10,7 @@ from scamp_extensions.pitch import Scale
 current_dir = os.path.dirname(os.path.abspath(__file__))
 soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
 soundFontPath_theremin_trill = os.path.join(current_dir, "soundFonts", "theremin_trill.sf2")
+soundFontPath_7777777 = os.path.join(current_dir, "soundFonts", "7777777.sf2")
 # soundFontPath_FluidR3_GM = os.path.join(current_dir, "soundFonts", "FluidR3_GM.sf2")
 
 
@@ -19,15 +20,16 @@ class VelomaInstrument:
     """Virtual Theremin-like instrument using SCAMP with real-time parameter control."""
 
     def __init__(self):
-        # self.session = sc.Session()
+        self.session = sc.Session()
         # self.session =sc.Session(default_soundfont=soundFontPath_theremin_high)
         # self.session = sc.Session(default_soundfont="theremin_high.sf2")
-        self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
+        # self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
+        self.session = sc.Session(default_soundfont=soundFontPath_7777777)
         # self.session = sc.Session(default_soundfont=soundFontPath_FluidR3_GM)
         self.session.tempo = 120
 
         # self.theremin = self.session.new_part("Sine Wave")
-        self.theremin = self.session.new_part("Whistle")
+        self.theremin = self.session.new_part("Lee")
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
@@ -44,9 +46,11 @@ class VelomaInstrument:
         self.is_note_playing = False
 
         # Hand position mapping ranges
-        self.glide_mode=False
+        # self.glide_mode=False
+        self.glide_mode=True
         self.start_key = 60.0  
         self.octave_range = 1
+        #scale 
         self.scale= Scale.major(self.start_key)
         # self.scale= Scale.natural_minor(self.start_key)
         # self.scale= Scale.blues(self.start_key)
