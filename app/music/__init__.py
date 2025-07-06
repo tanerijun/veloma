@@ -28,8 +28,8 @@ class VelomaInstrument:
         # self.session = sc.Session(default_soundfont=soundFontPath_FluidR3_GM)
         self.session.tempo = 120
 
-        # self.theremin = self.session.new_part("Sine Wave")
-        self.theremin = self.session.new_part("Lee")
+        self.theremin = self.session.new_part("Sine Wave")
+        # self.theremin = self.session.new_part("Theremin")
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
@@ -46,18 +46,26 @@ class VelomaInstrument:
         self.is_note_playing = False
 
         # Hand position mapping ranges
-        # self.glide_mode=False
-        self.glide_mode=True
+        self.glide_mode=False
+        # self.glide_mode=True    
         self.start_key = 60.0  
-        self.octave_range = 1
+        self.octave_range = 2
         #scale 
-        self.scale= Scale.major(self.start_key)
+        # self.scale= Scale.major(self.start_key)
+        self.scale= Scale.chromatic(self.start_key)
         # self.scale= Scale.natural_minor(self.start_key)
         # self.scale= Scale.blues(self.start_key)
         print(range(self.scale.num_steps))
         self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12)  #for glide
         self.volume_range = (0.0, 1.0)
-        
+        self.pitch_pool = []
+        i = 0
+        while True:
+            pitch = self.scale[i]
+            if pitch > self.start_key + self.octave_range * 12.0:
+                break
+            self.pitch_pool.append(pitch)
+            i += 1
 
         # Smoothing parameters - much higher for real-time response
         self.pitch_smoothing = 1  # Faster pitch response
@@ -116,7 +124,7 @@ class VelomaInstrument:
                     palm_x, 0.5, 1.0, *self.pitch_range
                 )
             else:
-                mapped_index_float = self._map_range(palm_x, 0.5, 1.0, 0, self.scale.num_steps * self.octave_range )
+                mapped_index_float = self._map_range(palm_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
                 mapped_index = int(round(mapped_index_float))
                 self.target_pitch=self.scale[mapped_index]
                 # print("Mapped index:", mapped_index, "Mapped pitch:", self.scale[mapped_index])
@@ -146,7 +154,7 @@ class VelomaInstrument:
                         pitch_x, 0.5, 1.0, *self.pitch_range
                     )
                 else:
-                    mapped_index_float = self._map_range(pitch_x, 0.5, 1.0, 0, self.scale.num_steps * self.octave_range )
+                    mapped_index_float = self._map_range(pitch_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
                     mapped_index = int(round(mapped_index_float))
                     self.target_pitch=self.scale[mapped_index]
                     
