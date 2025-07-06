@@ -109,11 +109,24 @@ class HandTracker:
             h, w, _ = frame.shape
             landmarks = hand_info['landmarks']
 
+            # # Draw landmarks
+            # for i, landmark in enumerate(landmarks):
+            #     x = int(landmark['x'] * w)
+            #     y = int(landmark['y'] * h)
+            #     cv2.circle(frame, (x, y), 5, (0, 255, 255 if i == 0 else 0), -1)
             # Draw landmarks
             for i, landmark in enumerate(landmarks):
                 x = int(landmark['x'] * w)
                 y = int(landmark['y'] * h)
-                cv2.circle(frame, (x, y), 5, (0, 255, 255 if i == 0 else 0), -1)
+
+                if i == 0:
+                    color = (0, 255, 255)  # 掌根 - 黃色
+                elif 5 <= i <= 8:
+                    color = (255, 0, 0)    # 食指 - 藍色
+                else:
+                    color = (0, 255, 0)    # 其他 - 綠色
+
+                cv2.circle(frame, (x, y), 5, color, -1)
 
             # Draw palm center
             palm_x, palm_y = hand_info['palm_center']
