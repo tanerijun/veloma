@@ -151,7 +151,7 @@ class VelomaInstrument:
             crossed = (index_left_of_middle != base_left_of_middle)
             if crossed:
                 print("食指與中指交叉！")
-                sc.fork(self.play_gesture)
+                # sc.fork(self.play_gesture)
                 # for i in range(len(self.gesture_list['arpeggio'])):
                 #     self.theremin.play_note(self.scale[self.gesture_list['arpeggio'][i]],
                 #         self.current_volume,
