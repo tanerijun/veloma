@@ -1,4 +1,3 @@
-import math
 import threading
 import time
 from typing import Any, Dict, Optional
@@ -6,33 +5,28 @@ import os
 import scamp as sc
 from scamp_extensions.pitch import Scale
 
-# paths to sound fonts
+# Paths to sound fonts
 current_dir = os.path.dirname(os.path.abspath(__file__))
 soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
 soundFontPath_theremin_trill = os.path.join(current_dir, "soundFonts", "theremin_trill.sf2")
 soundFontPath_7777777 = os.path.join(current_dir, "soundFonts", "7777777.sf2")
-# soundFontPath_FluidR3_GM = os.path.join(current_dir, "soundFonts", "FluidR3_GM.sf2")
 
-
-# if not os.path.exists(soundFontPath_theremin_high):
-#     raise FileNotFoundError(f"SoundFont not found at: {soundFontPath_theremin_high}")
 class VelomaInstrument:
     """Virtual Theremin-like instrument using SCAMP with real-time parameter control."""
 
     def __init__(self):
-        #test print count
-        self.pc=0
-        
+        self.pc = 0
+
         self.session = sc.Session()
+        self.session = sc.Session(default_soundfont=soundFontPath_7777777)
         # self.session =sc.Session(default_soundfont=soundFontPath_theremin_high)
         # self.session = sc.Session(default_soundfont="theremin_high.sf2")
         # self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
-        self.session = sc.Session(default_soundfont=soundFontPath_7777777)
-        # self.session = sc.Session(default_soundfont=soundFontPath_FluidR3_GM)
+
         self.session.tempo = 120
 
-        self.theremin = self.session.new_part("Sine Wave")
-        # self.theremin = self.session.new_part("Theremin")
+        # self.theremin = self.session.new_part("Sine Wave")
+        self.theremin = self.session.new_part("Theremin")
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
@@ -50,18 +44,21 @@ class VelomaInstrument:
 
         # Hand position mapping ranges
         self.glide_mode=False
-        # self.glide_mode=True    
-        self.start_key = 60.0  
+        # self.glide_mode=True
+        self.start_key = 60.0
         self.octave_range = 2
-        #scale 
-        self.scale= Scale.major(self.start_key)
-        # self.scale= Scale.chromatic(self.start_key)   
-        # self.scale= Scale.natural_minor(self.start_key)
-        # self.scale= Scale.blues(self.start_key)
-        print(range(self.scale.num_steps))
-        self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12)  #for glide
+        #scale
+        self.scale = Scale.major(self.start_key)
+        # self.scale = Scale.chromatic(self.start_key)
+        # self.scale = Scale.natural_minor(self.start_key)
+        # self.scale = Scale.blues(self.start_key)
+
+        self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12) # 12 semitones per octave
         self.volume_range = (0.0, 1.0)
+
+        # Create pitch pool based on scale
         self.pitch_pool = []
+        # TODO: write this better
         i = 0
         while True:
             pitch = self.scale[i]
@@ -70,38 +67,39 @@ class VelomaInstrument:
             self.pitch_pool.append(pitch)
             i += 1
 
-        self.gesture_list={
+        self.gesture_list= {
             "arpeggio":[0,2,4,2,0],
-            # "greeting":[1,2,1,2,1,2,0],
-            # "greeting_arc":[1,2,1,2,1,2,0.5],
-            # "haha":[1,1,1,1,1,1,1],
-            # "haha_arc":[1,1,-0.5,1,-0.5,1,1],
-            # "down":[4,3,2,1],
-            # "down_arc":[4,2,3,1],
-            # "up":[1,2,3,4],
-            # "up_arc":[1,3,2,4],
-            # "nonesence":[7,3,1,7],
-            # "nonesence":[7,3,1,7],
-            # "arpeggio_arc":[0,3,5,3,0],
-            # "arpeggio2":[0,2,4,2,4,2],
-            # "arpeggio2_arc":[0,3,5,3,5,3],
-            # "bridge":[0,7,1.5,0.5],
-            # "bridge_arc":[0,7,1,0],
-            # "ending":[8.5,6,5,4,4.5,4,2.5,4,5,5.5],
-            # "ending_arc":[8,7,5,4,5,2,4,5,4,5],
-            # "ending2":[5,5,5,5,1,1],
-            # "ending3":[3,3,3,2,2],
-            # "final":[0]
+            "greeting":[1,2,1,2,1,2,0],
+            "greeting_arc":[1,2,1,2,1,2,0.5],
+            "haha":[1,1,1,1,1,1,1],
+            "haha_arc":[1,1,-0.5,1,-0.5,1,1],
+            "down":[4,3,2,1],
+            "down_arc":[4,2,3,1],
+            "up":[1,2,3,4],
+            "up_arc":[1,3,2,4],
+            "nonesence":[7,3,1,7],
+            "nonesence":[7,3,1,7],
+            "arpeggio_arc":[0,3,5,3,0],
+            "arpeggio2":[0,2,4,2,4,2],
+            "arpeggio2_arc":[0,3,5,3,5,3],
+            "bridge":[0,7,1.5,0.5],
+            "bridge_arc":[0,7,1,0],
+            "ending":[8.5,6,5,4,4.5,4,2.5,4,5,5.5],
+            "ending_arc":[8,7,5,4,5,2,4,5,4,5],
+            "ending2":[5,5,5,5,1,1],
+            "ending3":[3,3,3,2,2],
+            "final":[0]
         }
+
         # Smoothing parameters - much higher for real-time response
-        self.pitch_smoothing = 1  # Faster pitch response
-        self.volume_smoothing = 1  # Faster volume response
+        self.pitch_smoothing = 1
+        self.volume_smoothing = 1
 
         # Threading
         self.audio_thread = None
         self.should_stop = False
         self.hands_detected = False
-        self.min_volume_threshold = 0.3  # Minimum volume to start/maintain note
+        self.min_volume_threshold = 0.3  # Minimum volume to start / maintain note
 
     def start_audio(self):
         """Start the audio processing thread."""
@@ -138,10 +136,10 @@ class VelomaInstrument:
 
         hands = hand_data["hands"]
         self.hands_detected = True
-        
-        self.pc+=1
-        if self.pc>37:
-            self.pc=0
+
+        self.pc += 1
+        if self.pc > 37:
+            self.pc = 0
             print("index finger:",
             f"({hands[0]['landmarks'][5]['x']:.3f}, {hands[0]['landmarks'][5]['y']:.3f}, {hands[0]['landmarks'][5]['z']:.3f})",
             f"({hands[0]['landmarks'][6]['x']:.3f}, {hands[0]['landmarks'][6]['y']:.3f}, {hands[0]['landmarks'][6]['z']:.3f})",
@@ -152,7 +150,7 @@ class VelomaInstrument:
             f"({hands[0]['landmarks'][10]['x']:.3f}, {hands[0]['landmarks'][10]['y']:.3f}, {hands[0]['landmarks'][10]['z']:.3f})",
             f"({hands[0]['landmarks'][11]['x']:.3f}, {hands[0]['landmarks'][11]['y']:.3f}, {hands[0]['landmarks'][11]['z']:.3f})",
             f"({hands[0]['landmarks'][12]['x']:.3f}, {hands[0]['landmarks'][12]['y']:.3f}, {hands[0]['landmarks'][12]['z']:.3f})\n",)
-            
+
             index_tip_x = hands[0]['landmarks'][8]['x']
             middle_tip_x = hands[0]['landmarks'][12]['x']
             index_base_x = hands[0]['landmarks'][5]['x']
@@ -190,12 +188,12 @@ class VelomaInstrument:
                 self.target_pitch=self.scale[mapped_index]
                 # print("Mapped index:", mapped_index, "Mapped pitch:", self.scale[mapped_index])
 
-            
+
             # volume_y_clamped = max(0.5, min(1.0, palm_y))
             self.target_volume = self._map_range(
                 1.0 - palm_y, 0.0, 0.5, *self.volume_range
             )
-          
+
             if len(hands) >= 2:
                 if hands[0]["palm_center"][0] > hands[1]["palm_center"][0]:
                     right_hand = hands[0]
@@ -208,7 +206,7 @@ class VelomaInstrument:
                 pitch_x = right_hand["palm_center"][0]
                 if self.glide_mode:
                     # 音高：右手（看 x）
-                   
+
                     # 0.5~1
                     # pitch_x_clamped = max(0.5, min(1.0, pitch_x))
                     self.target_pitch = self._map_range(
@@ -218,7 +216,6 @@ class VelomaInstrument:
                     mapped_index_float = self._map_range(pitch_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
                     mapped_index = int(round(mapped_index_float))
                     self.target_pitch=self.scale[mapped_index]
-                    
 
                 # 音量：左手
                 volume_y = left_hand["palm_center"][1]
@@ -230,7 +227,7 @@ class VelomaInstrument:
 
     def _audio_loop(self):
         """Main audio processing loop with real-time parameter updates."""
-        print("Real-time audio loop started")
+        print("Audio loop started")
 
         while not self.should_stop:
             # Smooth parameter transitions
@@ -241,35 +238,29 @@ class VelomaInstrument:
                 self.current_volume, self.target_volume, self.volume_smoothing
             )
 
-            # Decide whether to play, update, or stop note
             should_play = (
                 self.hands_detected and self.current_volume > self.min_volume_threshold
             )
 
             if should_play:
                 if not self.is_note_playing:
-                    # Start new continuous note
                     self._start_continuous_note()
                 else:
-                    # Update existing note parameters
                     self._update_note_parameters()
             else:
                 if self.is_note_playing:
-                    # Stop current note
                     self._stop_current_note()
 
-            # ~1000 Hz update rate
-            time.sleep(0.001)
+            time.sleep(0.001) # ~1000 Hz update rate
 
-        # Ensure note is stopped when loop exits
         self._stop_current_note()
-        print("Real-time audio loop ended")
+        print("Audio loop ended")
 
     def _start_continuous_note(self):
         """Start a new continuous note."""
         try:
             self.theremin.send_midi_cc(64, 1)
-            
+
             self.current_note = self.theremin.start_note(
                 pitch=self.current_pitch, volume=self.current_volume
             )
@@ -279,11 +270,8 @@ class VelomaInstrument:
             self.current_note_amplify2 = self.theremin.start_note(
                 pitch=self.current_pitch, volume=self.current_volume
             )
-          
+
             self.is_note_playing = True
-            print(
-                f"Started note: pitch={self.current_pitch:.1f}, volume={self.current_volume:.2f}"
-            )
 
         except Exception as e:
             print(f"Error starting note: {e}")
@@ -293,14 +281,12 @@ class VelomaInstrument:
         """Update parameters of the currently playing note."""
         if self.current_note and self.is_note_playing:
             try:
-                
                 self.current_note.change_pitch(self.current_pitch)
                 self.current_note.change_volume(self.current_volume)
                 self.current_note_amplify.change_pitch(self.current_pitch)
                 self.current_note_amplify.change_volume(self.current_volume)
                 self.current_note_amplify2.change_pitch(self.current_pitch)
                 self.current_note_amplify2.change_volume(self.current_volume)
-
             except Exception as e:
                 print(f"Error updating note parameters: {e}")
                 self._stop_current_note()
@@ -317,8 +303,6 @@ class VelomaInstrument:
                 self.current_note_amplify2 = None
                 self.is_note_playing = False
                 self.theremin.send_midi_cc(64, 0)
-                print("Note stopped")
-
             except Exception as e:
                 print(f"Error stopping note: {e}")
                 # Force cleanup
@@ -327,20 +311,14 @@ class VelomaInstrument:
                 self.current_note_amplify2 = None
                 self.is_note_playing = False
                 self.theremin.end_all_notes()
-    def play_gesture(self):
-        """
-        Play a predefined gesture sequence.
-        """
+
+    def play_gesture(self, gesture_name: str = "arpeggio"):
         for i in range(len(self.gesture_list['arpeggio'])):
-                self.theremin.play_note(self.scale[self.gesture_list['arpeggio'][i]],
-                # self.theremin.play_note(60,
-                    self.current_volume,
-                    1,
-                    blocking=False
-                    )
-                sc.wait(1)
-        
+            self.theremin.play_note(self.gesture_list[gesture_name][i], self.current_volume, 1, blocking=False)
+            sc.wait(1)
+
         self.theremin.end_all_notes()
+
     @staticmethod
     def _map_range(
         value: float, in_min: float, in_max: float, out_min: float, out_max: float
@@ -357,10 +335,10 @@ class VelomaInstrument:
         """Apply smoothing to value changes."""
         return current + (target - current) * smoothing
 
-
     @staticmethod
     def _get_scale_index(current: float) -> int:
         return int(current)
+
     @staticmethod
     def _round_value(current: float) -> int:
         return int(current)

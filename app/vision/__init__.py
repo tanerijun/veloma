@@ -109,11 +109,6 @@ class HandTracker:
             h, w, _ = frame.shape
             landmarks = hand_info['landmarks']
 
-            # # Draw landmarks
-            # for i, landmark in enumerate(landmarks):
-            #     x = int(landmark['x'] * w)
-            #     y = int(landmark['y'] * h)
-            #     cv2.circle(frame, (x, y), 5, (0, 255, 255 if i == 0 else 0), -1)
             # Draw landmarks
             for i, landmark in enumerate(landmarks):
                 x = int(landmark['x'] * w)
