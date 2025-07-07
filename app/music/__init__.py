@@ -5,6 +5,30 @@ import os
 import scamp as sc
 from scamp_extensions.pitch import Scale
 
+SCALES = {
+    "major": Scale.major, # first scale == default scale
+    "aeolian": Scale.aeolian,
+    "blues": Scale.blues,
+    "chromatic": Scale.chromatic,
+    "diatonic": Scale.diatonic,
+    "dorian": Scale.dorian,
+    "harmonic_minor": Scale.harmonic_minor,
+    "ionian": Scale.ionian,
+    "locrian": Scale.locrian,
+    "lydian": Scale.lydian,
+    "melodic_minor": Scale.melodic_minor,
+    "mixolydian": Scale.mixolydian,
+    "natural_minor": Scale.natural_minor,
+    "octatonic": Scale.octatonic,
+    "pentatonic": Scale.pentatonic,
+    "pentatonic_minor": Scale.pentatonic_minor,
+    "phrygian": Scale.phrygian,
+    "whole_tone": Scale.whole_tone,
+}
+
+def get_scale_names():
+    return list(SCALES.keys())
+
 # Paths to sound fonts
 current_dir = os.path.dirname(os.path.abspath(__file__))
 soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
@@ -19,7 +43,7 @@ class VelomaInstrument:
 
         self.session = sc.Session()
         self.session = sc.Session(default_soundfont=soundFontPath_7777777)
-        # self.session =sc.Session(default_soundfont=soundFontPath_theremin_high)
+        # self.session = sc.Session(default_soundfont=soundFontPath_theremin_high)
         # self.session = sc.Session(default_soundfont="theremin_high.sf2")
         # self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
 
@@ -44,11 +68,8 @@ class VelomaInstrument:
         # self.glide_mode=True
         self.start_key = 60.0
         self.octave_range = 2
-        #scale
-        self.scale = list(Scale.major(self.start_key)) # type: ignore
-        # self.scale = Scale.chromatic(self.start_key)
-        # self.scale = Scale.natural_minor(self.start_key)
-        # self.scale = Scale.blues(self.start_key)
+
+        self.scale = list(SCALES[get_scale_names()[0]](self.start_key))
 
         self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12) # 12 semitones per octave
         self.volume_range = (0.0, 1.0)
@@ -281,6 +302,11 @@ class VelomaInstrument:
                 self.current_notes = []
                 self.is_note_playing = False
                 self.theremin.end_all_notes()
+
+    def set_scale(self, scale_name: str):
+        if scale_name in SCALES:
+            self.scale = list(SCALES[scale_name](self.start_key))
+            self.pitch_pool = [pitch for pitch in self.scale if pitch <= self.start_key + self.octave_range * 12.0]
 
     def play_gesture(self, gesture_name: str = "arpeggio"):
         for i in range(len(self.gesture_list['arpeggio'])):

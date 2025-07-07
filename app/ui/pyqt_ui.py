@@ -1,12 +1,13 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QFrame
+    QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QImage, QFont, QCloseEvent
 import cv2
 import numpy as np
 from typing import Optional, Callable
+from app.music import get_scale_names
 import time
 
 
@@ -184,6 +185,14 @@ class VelomaUI(QMainWindow):
         settings_layout.addWidget(self.smoothing_slider, 2, 1)
         settings_layout.addWidget(self.smoothing_value_label, 2, 2)
 
+        # Scales selection
+        self.scale_combo = QComboBox()
+        self.scale_combo.addItems(get_scale_names())
+        self.scale_combo.setCurrentText(get_scale_names()[0])
+        self.scale_combo.currentTextChanged.connect(self._on_settings_changed)
+        settings_layout.addWidget(QLabel("Scale:"), 3, 0)
+        settings_layout.addWidget(self.scale_combo, 3, 1, 1, 2)
+
         audio_layout.addWidget(settings_group)
 
         # Instructions section
@@ -295,11 +304,12 @@ class VelomaUI(QMainWindow):
         if self.smoothing_value_label and self.smoothing_slider:
             self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
 
-        if self.on_settings_change_callback and self.pitch_min_slider and self.pitch_max_slider and self.smoothing_slider:
+        if self.on_settings_change_callback and self.pitch_min_slider and self.pitch_max_slider and self.smoothing_slider and self.scale_combo:
             settings = {
                 'pitch_range_min': float(self.pitch_min_slider.value()),
                 'pitch_range_max': float(self.pitch_max_slider.value()),
-                'smoothing': self.smoothing_slider.value() / 100.0
+                'smoothing': self.smoothing_slider.value() / 100.0,
+                'scale': self.scale_combo.currentText()
             }
             self.on_settings_change_callback(settings)
 

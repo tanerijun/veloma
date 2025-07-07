@@ -5,7 +5,7 @@ from typing import Dict, Any
 from PyQt6.QtWidgets import QApplication
 
 from app.vision import HandTracker
-from app.music import VelomaInstrument
+from app.music import VelomaInstrument, get_scale_names
 from app.ui import VelomaUI
 
 
@@ -74,6 +74,10 @@ class VelomaApp:
         smoothing = settings.get('smoothing', 0.1)
         self.instrument.pitch_smoothing = smoothing
         self.instrument.volume_smoothing = smoothing
+
+        # Update scale
+        scale_name = settings.get('scale', get_scale_names()[0])
+        self.instrument.set_scale(scale_name)
 
         print(f"Settings updated: {settings}")
 
