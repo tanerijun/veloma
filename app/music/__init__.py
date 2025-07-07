@@ -35,11 +35,8 @@ class VelomaInstrument:
         self.target_pitch = 60.0
         self.target_volume = 0.5
 
-        # Note control
-        self.current_note = None
-        # for amplification
-        self.current_note_amplify = None
-        self.current_note_amplify2 = None
+        self.current_notes = [] # hold all active notes
+        self.num_amplified_notes = 3 # number of notes playing at the same time
         self.is_note_playing = False
 
         # Hand position mapping ranges
@@ -48,7 +45,7 @@ class VelomaInstrument:
         self.start_key = 60.0
         self.octave_range = 2
         #scale
-        self.scale = Scale.major(self.start_key)
+        self.scale = list(Scale.major(self.start_key)) # type: ignore
         # self.scale = Scale.chromatic(self.start_key)
         # self.scale = Scale.natural_minor(self.start_key)
         # self.scale = Scale.blues(self.start_key)
@@ -57,15 +54,7 @@ class VelomaInstrument:
         self.volume_range = (0.0, 1.0)
 
         # Create pitch pool based on scale
-        self.pitch_pool = []
-        # TODO: write this better
-        i = 0
-        while True:
-            pitch = self.scale[i]
-            if pitch > self.start_key + self.octave_range * 12.0:
-                break
-            self.pitch_pool.append(pitch)
-            i += 1
+        self.pitch_pool = [pitch for pitch in self.scale if pitch <= self.start_key + self.octave_range * 12.0]
 
         self.gesture_list= {
             "arpeggio":[0,2,4,2,0],
@@ -258,57 +247,38 @@ class VelomaInstrument:
 
     def _start_continuous_note(self):
         """Start a new continuous note."""
-        try:
-            self.theremin.send_midi_cc(64, 1)
-
-            self.current_note = self.theremin.start_note(
+        self.current_notes = []
+        for _ in range(self.num_amplified_notes):
+            note = self.theremin.start_note(
                 pitch=self.current_pitch, volume=self.current_volume
             )
-            self.current_note_amplify = self.theremin.start_note(
-                pitch=self.current_pitch, volume=self.current_volume
-            )
-            self.current_note_amplify2 = self.theremin.start_note(
-                pitch=self.current_pitch, volume=self.current_volume
-            )
+            self.current_notes.append(note)
 
-            self.is_note_playing = True
-
-        except Exception as e:
-            print(f"Error starting note: {e}")
-            self.is_note_playing = False
+        self.is_note_playing = True
 
     def _update_note_parameters(self):
         """Update parameters of the currently playing note."""
-        if self.current_note and self.is_note_playing:
+        if self.current_notes and self.is_note_playing:
             try:
-                self.current_note.change_pitch(self.current_pitch)
-                self.current_note.change_volume(self.current_volume)
-                self.current_note_amplify.change_pitch(self.current_pitch)
-                self.current_note_amplify.change_volume(self.current_volume)
-                self.current_note_amplify2.change_pitch(self.current_pitch)
-                self.current_note_amplify2.change_volume(self.current_volume)
+                for note in self.current_notes:
+                    note.change_pitch(self.current_pitch)
+                    note.change_volume(self.current_volume)
             except Exception as e:
                 print(f"Error updating note parameters: {e}")
                 self._stop_current_note()
 
     def _stop_current_note(self):
         """Stop the currently playing note."""
-        if self.current_note and self.is_note_playing:
+        if self.current_notes and self.is_note_playing:
             try:
-                self.current_note.end()
-                self.current_note = None
-                self.current_note_amplify.end()
-                self.current_note_amplify = None
-                self.current_note_amplify2.end()
-                self.current_note_amplify2 = None
+                for note in self.current_notes:
+                    note.end()
+                self.current_notes = []
                 self.is_note_playing = False
                 self.theremin.send_midi_cc(64, 0)
             except Exception as e:
                 print(f"Error stopping note: {e}")
-                # Force cleanup
-                self.current_note = None
-                self.current_note_amplify = None
-                self.current_note_amplify2 = None
+                self.current_notes = []
                 self.is_note_playing = False
                 self.theremin.end_all_notes()
 
