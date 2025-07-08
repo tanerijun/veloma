@@ -149,9 +149,9 @@ class VelomaUI(QMainWindow):
         settings_layout.addWidget(QLabel("Octave Range:"), 1, 0)
         self.octave_range_slider = QSlider(Qt.Orientation.Horizontal)
         self.octave_range_slider.setRange(1, 5)
-        self.octave_range_slider.setValue(2)
+        self.octave_range_slider.setValue(1)
         self.octave_range_slider.valueChanged.connect(self._on_settings_changed)
-        self.octave_range_value_label = QLabel("2")
+        self.octave_range_value_label = QLabel("1")
         settings_layout.addWidget(self.octave_range_slider, 1, 1)
         settings_layout.addWidget(self.octave_range_value_label, 1, 2)
 

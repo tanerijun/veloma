@@ -50,7 +50,7 @@ class VelomaInstrument:
         self.session.tempo = 120
 
         # self.theremin = self.session.new_part("Sine Wave")
-        self.theremin = self.session.new_part("Theremin")
+        self.theremin = self.session.new_part("piano")
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
@@ -66,7 +66,7 @@ class VelomaInstrument:
         # Hand position mapping ranges
         self.glide_mode=DEFAULT_GLIDE_MODE
         self.start_key = 60.0
-        self.octave_range = 2
+        self.octave_range = 1
 
         self.scale_name = "major"
         self.pitch_pool = self._generate_pitch_pool(self.scale_name)
@@ -83,6 +83,12 @@ class VelomaInstrument:
         self.should_stop = False
         self.hands_detected = False
         self.min_volume_threshold = 0.3  # Minimum volume to start / maintain note
+
+        # Beginner mode
+        self.last_hand_position = None
+        self.note_played_recently = False
+        self.note_play_cooldown = 0.2  # seconds
+        self.last_note_time = 0
 
     def start_audio(self):
         """Start the audio processing thread."""
@@ -187,14 +193,32 @@ class VelomaInstrument:
                 self.hands_detected and self.current_volume > self.min_volume_threshold
             )
 
-            if should_play:
-                if not self.is_note_playing:
-                    self._start_continuous_note()
+            if self.glide_mode:
+                if should_play:
+                    if not self.is_note_playing:
+                        self._start_continuous_note()
+                    else:
+                        self._update_note_parameters()
                 else:
-                    self._update_note_parameters()
+                    if self.is_note_playing:
+                        self._stop_current_note()
             else:
-                if self.is_note_playing:
-                    self._stop_current_note()
+                if should_play:
+                    hand_pos = (self.target_pitch, self.target_volume)
+                    now = time.time()
+                    # Play note if hand moved significantly or after cooldown
+                    if (
+                        self.last_hand_position is None
+                        or abs(hand_pos[0] - self.last_hand_position[0]) > 0.5  # adjust threshold as needed
+                        or abs(hand_pos[1] - self.last_hand_position[1]) > 0.1
+                    ):
+                        if now - self.last_note_time > self.note_play_cooldown:
+                            print("PLAYING NOTE")
+                            self.theremin.play_note(self.current_pitch, self.current_volume, 0.4)
+                            self.last_note_time = now
+                            self.last_hand_position = hand_pos
+                else:
+                    self.last_hand_position = None
 
             time.sleep(0.0001)
 
