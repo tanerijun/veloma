@@ -376,7 +376,7 @@ class VelomaUI(QMainWindow):
     def run(self):
         """Run the UI main loop."""
         self.is_running = True
-        self.show()
+        self.showFullScreen()
 
         # Auto-start the application after UI is shown
         QTimer.singleShot(100, self.start_application)
