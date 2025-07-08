@@ -27,7 +27,7 @@ SCALES = {
 }
 
 DEFAULT_GLIDE_MODE = False
-PITCH_X_MARGIN = 0.03 # 3% margin on the right
+PITCH_X_MARGIN = 0.01 # 1% margin on the right
 
 def get_scale_names():
     return list(SCALES.keys())
@@ -90,6 +90,7 @@ class VelomaInstrument:
         self.note_play_cooldown = 0.2  # seconds
         self.last_note_time = 0
         self.last_note_index = None
+        self.last_pitch_x = None
 
     def start_audio(self):
         """Start the audio processing thread."""
@@ -120,34 +121,41 @@ class VelomaInstrument:
             hand_data: Dictionary containing hand position information
         """
         if not hand_data or not hand_data.get("hands"):
-            # No hands detected - prepare to stop playing
             self.hands_detected = False
             return
 
         hands = hand_data["hands"]
         self.hands_detected = True
 
+        region_start = 0.5
+        region_end = 1.0 - PITCH_X_MARGIN
+        num_notes = len(self.pitch_pool)
+        region_width = region_end - region_start
+        block_width = region_width / num_notes
+
         if len(hands) >= 1:
             # Use first hand for pitch control (vertical position)
             primary_hand = hands[0]
             palm_x, palm_y = primary_hand["palm_center"]
+            self.last_pitch_x = palm_x
 
             if self.glide_mode:
-                # pitch_x_clamped = max(0.5, min(1.0, palm_x))
+                # Continuous mapping
                 self.target_pitch = self._map_range(
-                    palm_x, 0.5, 1.0 - PITCH_X_MARGIN, *self.pitch_range
+                    palm_x, region_start, region_end, *self.pitch_range
                 )
             else:
-                mapped_index_float = self._map_range(palm_x, 0.5, 1.0 - PITCH_X_MARGIN, 0, len(self.pitch_pool) - 1 )
-                mapped_index = int(round(mapped_index_float))
-                self.target_pitch=self.pitch_pool[mapped_index]
+                # Discrete mapping: equal-width blocks for each note
+                x = max(region_start, min(region_end, palm_x)) # clamp palm_x to region
+                mapped_index = int((x - region_start) / block_width)
+                mapped_index = min(mapped_index, num_notes - 1)
 
-            # volume_y_clamped = max(0.5, min(1.0, palm_y))
-            self.target_volume = self._map_range(
-                1.0 - palm_y, 0.0, 0.5, *self.volume_range
-            )
+                self.target_pitch = self.pitch_pool[mapped_index]
+
+            self.target_volume = self._map_range(1.0 - palm_y, 0.0, 0.5, *self.volume_range)
 
             if len(hands) >= 2:
+                # Assign right/left hands
                 if hands[0]["palm_center"][0] > hands[1]["palm_center"][0]:
                     right_hand = hands[0]
                     left_hand = hands[1]
@@ -155,31 +163,28 @@ class VelomaInstrument:
                     right_hand = hands[1]
                     left_hand = hands[0]
 
-
                 pitch_x = right_hand["palm_center"][0]
-                if self.glide_mode:
-                    # 音高：右手（看 x）
-                    # 0.5~1
-                    # pitch_x_clamped = max(0.5, min(1.0, pitch_x))
-                    self.target_pitch = self._map_range(
-                        pitch_x, 0.5, 1.0 - PITCH_X_MARGIN, *self.pitch_range
-                    )
-                else:
-                    mapped_index_float = self._map_range(pitch_x, 0.5, 1.0 - PITCH_X_MARGIN, 0, len(self.pitch_pool) - 1 )
-                    mapped_index = int(round(mapped_index_float))
-                    self.target_pitch=self.pitch_pool[mapped_index]
-
-                # 音量：左手
                 volume_y = left_hand["palm_center"][1]
-                # volume_y_clamped = max(0.5, min(1.0, volume_y))
-                # 因為越上面音量越大
-                self.target_volume = self._map_range(
-                    1.0 - volume_y, 0.0, 0.5, *self.volume_range
-                )
+
+                self.last_pitch_x = pitch_x
+
+                if self.glide_mode:
+                    self.target_pitch = self._map_range(pitch_x, region_start, region_end, *self.pitch_range)
+                else:
+                    # Discrete mapping for two hands
+                    x = max(region_start, min(region_end, pitch_x))
+                    mapped_index = int((x - region_start) / block_width)
+                    mapped_index = min(mapped_index, num_notes - 1)
+                    self.target_pitch = self.pitch_pool[mapped_index]
+
+                self.target_volume = self._map_range(1.0 - volume_y, 0.0, 0.5, *self.volume_range)
 
     def _audio_loop(self):
         """Main audio processing loop with real-time parameter updates."""
         print("Audio loop started")
+
+        region_start = 0.5
+        region_end = 1.0 - PITCH_X_MARGIN
 
         while not self.should_stop:
             # Smooth parameter transitions
@@ -204,21 +209,32 @@ class VelomaInstrument:
                     if self.is_note_playing:
                         self._stop_current_note()
             else:
-                if should_play:
-                    try:
-                        note_index = self.pitch_pool.index(round(self.target_pitch))
-                    except ValueError:
-                        note_index = None
+                # Beginner mode: discrete notes
+                num_notes = len(self.pitch_pool)
+                region_width = region_end - region_start
+                block_width = region_width / num_notes
 
-                    now = time.time()
-                    if (
-                        note_index is not None
-                        and (self.last_note_index is None or note_index != self.last_note_index)
-                        and now - self.last_note_time > self.note_play_cooldown
-                    ):
-                        self.theremin.play_note(self.pitch_pool[note_index], self.current_volume, 0.4)
-                        self.last_note_time = now
-                        self.last_note_index = note_index
+                pitch_x = self.last_pitch_x
+
+                if should_play and pitch_x is not None:
+                    if pitch_x < region_start:
+                        # Hand is left of the pitch region: reset and do not play
+                        self.last_note_index = None
+                    else:
+                        # Hand is inside the pitch region: map to note
+                        x = max(region_start, min(region_end, pitch_x))
+                        note_index = int((x - region_start) / block_width)
+                        note_index = min(note_index, num_notes - 1)
+
+                        now = time.time()
+                        if (
+                            note_index is not None
+                            and (self.last_note_index is None or note_index != self.last_note_index)
+                            and now - self.last_note_time > self.note_play_cooldown
+                        ):
+                            self.theremin.play_note(self.pitch_pool[note_index], self.current_volume, 0.4)
+                            self.last_note_time = now
+                            self.last_note_index = note_index
                 else:
                     self.last_note_index = None
 

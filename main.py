@@ -5,7 +5,7 @@ from typing import Dict, Any
 from PyQt6.QtWidgets import QApplication
 
 from app.vision import HandTracker
-from app.music import VelomaInstrument, get_scale_names
+from app.music import PITCH_X_MARGIN, VelomaInstrument, get_scale_names
 from app.ui import VelomaUI
 
 
@@ -31,6 +31,8 @@ class VelomaApp:
         self.last_hand_data = None
         self.last_hand_time = 0
         self.hand_hold_timeout = 0.5  # seconds to hold last hand data on dropout
+
+        self.show_note_boundaries = True
 
     def _start_tracking(self) -> bool:
         """Start the hand tracking and audio synthesis."""
@@ -87,6 +89,9 @@ class VelomaApp:
         # Update glide mode
         self.instrument.glide_mode = settings.get('glide_mode', False)
 
+        # Update show boundaries setting
+        self.show_note_boundaries = settings.get('show_note_boundaries', True)
+
         if self.instrument.glide_mode:
             self.instrument.set_instrument("Theremin")
             # If hands are detected and should_play, start note immediately
@@ -125,6 +130,13 @@ class VelomaApp:
                     self.instrument.update_from_vision(use_hand_data)
                     if frame is not None:
                         frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, hand_data)
+                        if not self.instrument.glide_mode and self.show_note_boundaries:
+                            num_notes = len(self.instrument.pitch_pool)
+                            region_start = 0.5
+                            region_end = 1.0 - PITCH_X_MARGIN
+                            frame_with_landmarks = self.hand_tracker.draw_note_boundaries(
+                                frame_with_landmarks, num_notes, region_start, region_end
+                            )
                         self.ui.update_camera_frame(frame_with_landmarks)
                     self.ui.update_audio_params(
                         self.instrument.current_pitch,

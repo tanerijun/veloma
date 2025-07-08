@@ -130,3 +130,18 @@ class HandTracker:
             cv2.circle(frame, (palm_pixel_x, palm_pixel_y), 10, (255, 0, 0), -1)
 
         return frame
+
+    def draw_note_boundaries(self, frame, num_notes, region_start=0.5, region_end=0.9, color=(255, 255, 255)):
+        """
+        Draw vertical lines on the frame to indicate note boundaries.
+        region_start, region_end: normalized (0.0-1.0) X positions
+        """
+        h, w, _ = frame.shape
+        region_width = region_end - region_start
+        block_width = region_width / num_notes
+
+        for i in range(num_notes + 1):
+            x_norm = region_start + i * block_width
+            x_px = int(x_norm * w)
+            cv2.line(frame, (x_px, 0), (x_px, h), color, 2)
+        return frame

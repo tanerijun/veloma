@@ -179,6 +179,12 @@ class VelomaUI(QMainWindow):
         self.glide_checkbox.stateChanged.connect(self._on_settings_changed)
         settings_layout.addWidget(self.glide_checkbox, 4, 0, 1, 3)
 
+        # Show guidelines
+        self.show_boundaries_checkbox = QCheckBox("Show Guide")
+        self.show_boundaries_checkbox.setChecked(True)
+        self.show_boundaries_checkbox.stateChanged.connect(self._on_settings_changed)
+        settings_layout.addWidget(self.show_boundaries_checkbox, 5, 0, 1, 3)
+
         audio_layout.addWidget(settings_group)
 
         # Instructions section
@@ -279,7 +285,8 @@ class VelomaUI(QMainWindow):
                 'octave_range': int(self.octave_range_slider.value()),
                 'smoothing': self.smoothing_slider.value() / 100.0,
                 'scale': self.scale_combo.currentText(),
-                'glide_mode': self.glide_checkbox.isChecked()
+                'glide_mode': self.glide_checkbox.isChecked(),
+                'show_note_boundaries': self.show_boundaries_checkbox.isChecked()
             }
             self.on_settings_change_callback(settings)
 
