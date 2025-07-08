@@ -2,6 +2,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 from typing import Optional, Tuple, Dict, Any
+import threading
+import time
 
 
 class HandTracker:
@@ -20,6 +22,34 @@ class HandTracker:
         )
         self.cap = None
         self.is_running = False
+
+    def start_async(self, on_hand_data):
+        """
+        Start hand tracking in a background thread.
+        on_hand_data: function to call with hand_data dict (or None) for each frame.
+        """
+        if hasattr(self, '_thread') and self._thread and self._thread.is_alive():
+            return
+
+        self._async_stop = False
+        self._on_hand_data = on_hand_data
+        self._thread = threading.Thread(target=self._async_loop)
+        self._thread.daemon = True
+        self._thread.start()
+
+    def stop_async(self):
+        """Stop the background hand tracking thread."""
+        self._async_stop = True
+        if hasattr(self, '_thread') and self._thread:
+            self._thread.join(timeout=2.0)
+            self._thread = None
+
+    def _async_loop(self):
+        while not getattr(self, '_async_stop', False):
+            hand_data = self.get_hand_positions()
+            if hasattr(self, '_on_hand_data') and self._on_hand_data:
+                self._on_hand_data(hand_data)
+            time.sleep(0.01)
 
     def start_camera(self) -> bool:
         """Start the camera capture."""
@@ -41,7 +71,6 @@ class HandTracker:
             self.cap = None
         if self.hands:
             self.hands.close()
-            self.hands = None
 
     def get_hand_positions(self) -> Optional[Dict[str, Any]]:
         """
