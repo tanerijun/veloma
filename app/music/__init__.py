@@ -102,7 +102,6 @@ class VelomaInstrument:
         self.audio_thread = threading.Thread(target=self._audio_loop)
         self.audio_thread.daemon = True
         self.audio_thread.start()
-        print("Audio engine started")
 
     def stop_audio(self):
         """Stop the audio processing."""
@@ -112,7 +111,6 @@ class VelomaInstrument:
 
         if self.audio_thread:
             self.audio_thread.join(timeout=1.0)
-        print("Audio engine stopped")
 
     def update_from_vision(self, hand_data: Optional[Dict[str, Any]]):
         """
@@ -181,8 +179,6 @@ class VelomaInstrument:
 
     def _audio_loop(self):
         """Main audio processing loop with real-time parameter updates."""
-        print("Audio loop started")
-
         region_start = 0.5
         region_end = 1.0 - PITCH_X_MARGIN
 
@@ -241,7 +237,6 @@ class VelomaInstrument:
             time.sleep(0.0001)
 
         self._stop_current_note()
-        print("Audio loop ended")
 
     def _start_continuous_note(self):
         """Start a new continuous note."""

@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 from typing import Optional, Callable
 from app.music import DEFAULT_GLIDE_MODE, get_scale_names
-import time
 
 
 class VelomaUI(QMainWindow):
@@ -156,14 +155,14 @@ class VelomaUI(QMainWindow):
         settings_layout.addWidget(self.octave_range_value_label, 1, 2)
 
         # Smoothing setting
-        settings_layout.addWidget(QLabel("Smoothing:"), 2, 0)
-        self.smoothing_slider = QSlider(Qt.Orientation.Horizontal)
-        self.smoothing_slider.setRange(1, 50)
-        self.smoothing_slider.setValue(10)  # 0.1 * 100
-        self.smoothing_slider.valueChanged.connect(self._on_settings_changed)
-        self.smoothing_value_label = QLabel("0.10")
-        settings_layout.addWidget(self.smoothing_slider, 2, 1)
-        settings_layout.addWidget(self.smoothing_value_label, 2, 2)
+        # settings_layout.addWidget(QLabel("Smoothing:"), 2, 0)
+        # self.smoothing_slider = QSlider(Qt.Orientation.Horizontal)
+        # self.smoothing_slider.setRange(50, 100)
+        # self.smoothing_slider.setValue(100)
+        # self.smoothing_slider.valueChanged.connect(self._on_settings_changed)
+        # self.smoothing_value_label = QLabel("1.00")
+        # settings_layout.addWidget(self.smoothing_slider, 2, 1)
+        # settings_layout.addWidget(self.smoothing_value_label, 2, 2)
 
         # Scales selection
         self.scale_combo = QComboBox()
@@ -192,9 +191,12 @@ class VelomaUI(QMainWindow):
         instructions_layout = QVBoxLayout(instructions_group)
 
         instructions = [
-            "• Move your hand up/down to control pitch",
-            "• Move your hand left/right to control volume",
-            "• Use two hands for advanced control"
+            "Single-hand mode:",
+            "  • Move your hand left/right to control pitch",
+            "  • Move your hand up/down to control volume",
+            "Dual-hand mode:",
+            "  • Move right hand left/right to control pitch",
+            "  • Move left hand up/down to control volume",
         ]
 
         for instruction in instructions:
@@ -219,7 +221,6 @@ class VelomaUI(QMainWindow):
             QPushButton:hover {
                 background-color: #ffa733;
                 color: #fff;
-                cursor: pointer;
             }
         """)
         exit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -272,22 +273,23 @@ class VelomaUI(QMainWindow):
     def _on_settings_changed(self):
         """Handle settings slider changes."""
         # Update slider value labels
-        if self.smoothing_value_label and self.smoothing_slider:
-            self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
+        # if self.smoothing_value_label and self.smoothing_slider:
+        #     self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
         if self.start_key_value_label and self.start_key_slider:
             self.start_key_value_label.setText(f"{self.start_key_slider.value()}")
         if self.octave_range_value_label and self.octave_range_slider:
             self.octave_range_value_label.setText(f"{self.octave_range_slider.value()}")
 
-        if self.on_settings_change_callback and self.start_key_slider and self.octave_range_slider and self.smoothing_slider and self.scale_combo and self.glide_checkbox:
+        if self.on_settings_change_callback and self.start_key_slider and self.octave_range_slider and self.scale_combo and self.glide_checkbox:
             settings = {
                 'start_key': int(self.start_key_slider.value()),
                 'octave_range': int(self.octave_range_slider.value()),
-                'smoothing': self.smoothing_slider.value() / 100.0,
+                # 'smoothing': self.smoothing_slider.value() / 100.0,
                 'scale': self.scale_combo.currentText(),
                 'glide_mode': self.glide_checkbox.isChecked(),
                 'show_note_boundaries': self.show_boundaries_checkbox.isChecked()
             }
+            print("OK")
             self.on_settings_change_callback(settings)
 
     def update_camera_frame(self, frame: Optional[np.ndarray]):

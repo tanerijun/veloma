@@ -36,8 +36,6 @@ class VelomaApp:
 
     def _start_tracking(self) -> bool:
         """Start the hand tracking and audio synthesis."""
-        print("Starting Veloma...")
-
         # Start camera
         if not self.hand_tracker.start_camera():
             print("Failed to start camera!")
@@ -51,13 +49,10 @@ class VelomaApp:
         self.main_thread.daemon = True
         self.main_thread.start()
 
-        print("Veloma started successfully!")
         return True
 
     def _stop_tracking(self):
         """Stop the hand tracking and audio synthesis."""
-        print("Stopping Veloma...")
-
         self.is_running = False
         self.instrument.stop_audio()
         self.hand_tracker.stop_camera()
@@ -65,8 +60,6 @@ class VelomaApp:
         # Wait for main thread to finish
         if self.main_thread and self.main_thread.is_alive():
             self.main_thread.join(timeout=2.0)
-
-        print("Veloma stopped.")
 
     def _update_settings(self, settings: Dict[str, Any]):
         """Update instrument settings from UI."""
@@ -78,9 +71,9 @@ class VelomaApp:
         self.instrument.pitch_range = (start_key, start_key + octave_range * 12)
 
         # Update smoothing
-        smoothing = settings.get('smoothing', 0.1)
-        self.instrument.pitch_smoothing = smoothing
-        self.instrument.volume_smoothing = smoothing
+        # smoothing = settings.get('smoothing', 0.1)
+        # self.instrument.pitch_smoothing = smoothing
+        # self.instrument.volume_smoothing = smoothing
 
         # Update scale
         scale_name = settings.get('scale', get_scale_names()[0])
@@ -93,19 +86,15 @@ class VelomaApp:
         self.show_note_boundaries = settings.get('show_note_boundaries', True)
 
         if self.instrument.glide_mode:
-            self.instrument.set_instrument("Theremin")
+            self.instrument.set_instrument("Sine Wave")
             # If hands are detected and should_play, start note immediately
             if self.last_hand_data and self.last_hand_data.get("hands"):
                 self.instrument.update_from_vision(self.last_hand_data)
         else:
             self.instrument.set_instrument("Piano")
 
-        print(f"Settings updated: {settings}")
-
     def _main_loop(self):
         """Main processing loop"""
-        print("Main processing loop started")
-
         while self.is_running:
             try:
                 hand_data = self.hand_tracker.get_hand_positions()
@@ -153,10 +142,7 @@ class VelomaApp:
                 print(f"Error in main loop: {e}")
                 time.sleep(0.1)
 
-        print("Main processing loop ended")
-
     def run(self):
-        print("Starting Veloma...")
         self.ui.run()
         if self.app:
             self.app.aboutToQuit.connect(self.cleanup)
@@ -165,23 +151,14 @@ class VelomaApp:
 
     def cleanup(self):
         """Clean up all resources."""
-        print("Cleaning up...")
-
         if self.is_running:
             self._stop_tracking()
 
         if self.ui:
             self.ui.cleanup()
 
-        print("Cleanup complete.")
-
 
 def main():
-    print("=" * 50)
-    print("Veloma - Virtual Theremin")
-    print("Gesture-controlled musical instrument")
-    print("=" * 50)
-
     app = VelomaApp()
     app.run()
 

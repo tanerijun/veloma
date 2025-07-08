@@ -114,14 +114,14 @@ class HandTracker:
                 x = int(landmark['x'] * w)
                 y = int(landmark['y'] * h)
 
-                if i == 0:
-                    color = (0, 255, 255)  # 掌根 - 黃色
-                elif 5 <= i <= 8:
-                    color = (255, 0, 0)    # 食指 - 藍色
-                else:
-                    color = (0, 255, 0)    # 其他 - 綠色
+                # if i == 0:
+                #     color = (0, 255, 255)  # 掌根 - 黃色
+                # elif 5 <= i <= 8:
+                #     color = (255, 0, 0)    # 食指 - 藍色
+                # else:
+                color = (0, 255, 0)
 
-                cv2.circle(frame, (x, y), 5, color, -1)
+                cv2.circle(frame, (x, y), 4, color, -1)
 
             # Draw palm center
             palm_x, palm_y = hand_info['palm_center']
