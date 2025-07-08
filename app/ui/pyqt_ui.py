@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QPixmap, QImage, QFont, QCloseEvent
+from PyQt6.QtGui import QPixmap, QImage, QCloseEvent, QCursor
 import cv2
 import numpy as np
 from typing import Optional, Callable
@@ -60,38 +60,9 @@ class VelomaUI(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
-        self._create_header(main_layout)
-        self._create_control_buttons(main_layout)
         self._create_main_content(main_layout)
 
         self._setup_camera_display()
-
-
-    def _create_header(self, parent_layout):
-        """Create the header section."""
-        title_label = QLabel("Veloma - Virtual Theremin")
-        title_font = QFont()
-        title_font.setPointSize(16)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #64C8FF; margin: 10px;")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        parent_layout.addWidget(title_label)
-
-    def _create_control_buttons(self, parent_layout):
-        """Create control buttons section."""
-        button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(0, 5, 0, 10)
-
-        exit_button = QPushButton("Exit")
-        exit_button.setFixedSize(100, 40)
-        exit_button.clicked.connect(self._on_exit_clicked)
-        exit_button.setStyleSheet("QPushButton { background-color: #FF9800; color: white; font-weight: bold; }")
-
-        button_layout.addStretch()
-        button_layout.addWidget(exit_button)
-
-        parent_layout.addLayout(button_layout)
 
     def _create_main_content(self, parent_layout):
         """Create the main content area."""
@@ -152,6 +123,20 @@ class VelomaUI(QMainWindow):
         self.volume_value_label = QLabel("0.0")
         params_layout.addWidget(self.volume_slider, 1, 1)
         params_layout.addWidget(self.volume_value_label, 1, 2)
+
+        slider_style = """
+        QSlider::handle:disabled {
+            background: #ff9800;
+            border: 1px solid #ffa733;
+            width: 10px;
+            height: 10px;
+            margin: -5px 0;
+            border-radius: 12px;
+        }
+        """
+
+        self.pitch_slider.setStyleSheet(slider_style)
+        self.volume_slider.setStyleSheet(slider_style)
 
         audio_layout.addWidget(params_group)
 
@@ -222,8 +207,28 @@ class VelomaUI(QMainWindow):
 
         audio_layout.addWidget(instructions_group)
 
-        audio_layout.addStretch()
+        exit_button = QPushButton("Exit")
+        exit_button.setFixedSize(100, 40)
+        exit_button.clicked.connect(self._on_exit_clicked)
+        exit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FF9800;
+                color: white;
+                font-weight: bold;
+                border-radius: 18px;
+                padding: 8px 24px;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background-color: #ffa733;
+                color: #fff;
+                cursor: pointer;
+            }
+        """)
+        exit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        audio_layout.addWidget(exit_button, alignment=Qt.AlignmentFlag.AlignRight)
 
+        audio_layout.addStretch()
         parent_layout.addWidget(audio_group)
 
     def _setup_camera_display(self):
