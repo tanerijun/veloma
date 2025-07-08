@@ -10,6 +10,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
 soundFontPath_theremin_trill = os.path.join(current_dir, "soundFonts", "theremin_trill.sf2")
 soundFontPath_7777777 = os.path.join(current_dir, "soundFonts", "7777777.sf2")
+soundFontPath_lesetrash = os.path.join(current_dir, "soundFonts", "lesetrash.sf2")
 
 class VelomaInstrument:
     """Virtual Theremin-like instrument using SCAMP with real-time parameter control."""
@@ -18,15 +19,16 @@ class VelomaInstrument:
         self.pc = 0
 
         self.session = sc.Session()
+        # self.session = sc.Session(default_soundfont=soundFontPath_lesetrash)
         self.session = sc.Session(default_soundfont=soundFontPath_7777777)
         # self.session =sc.Session(default_soundfont=soundFontPath_theremin_high)
         # self.session = sc.Session(default_soundfont="theremin_high.sf2")
         # self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
-
+        self.session.print_default_soundfont_presets()
         self.session.tempo = 120
 
         # self.theremin = self.session.new_part("Sine Wave")
-        self.theremin = self.session.new_part("Theremin")
+        self.theremin = self.session.new_part("Yamaha Grand Piano")
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
@@ -43,7 +45,7 @@ class VelomaInstrument:
         self.glide_mode=False
         # self.glide_mode=True
         self.start_key = 60.0
-        self.octave_range = 2
+        self.octave_range = 1
         #scale
         self.scale = list(Scale.major(self.start_key)) # type: ignore
         # self.scale = Scale.chromatic(self.start_key)
@@ -126,31 +128,31 @@ class VelomaInstrument:
         hands = hand_data["hands"]
         self.hands_detected = True
 
-        self.pc += 1
-        if self.pc > 37:
-            self.pc = 0
-            print("index finger:",
-            f"({hands[0]['landmarks'][5]['x']:.3f}, {hands[0]['landmarks'][5]['y']:.3f}, {hands[0]['landmarks'][5]['z']:.3f})",
-            f"({hands[0]['landmarks'][6]['x']:.3f}, {hands[0]['landmarks'][6]['y']:.3f}, {hands[0]['landmarks'][6]['z']:.3f})",
-            f"({hands[0]['landmarks'][7]['x']:.3f}, {hands[0]['landmarks'][7]['y']:.3f}, {hands[0]['landmarks'][7]['z']:.3f})",
-            f"({hands[0]['landmarks'][8]['x']:.3f}, {hands[0]['landmarks'][8]['y']:.3f}, {hands[0]['landmarks'][8]['z']:.3f})",)
-            print("middle finger:",
-            f"({hands[0]['landmarks'][9]['x']:.3f}, {hands[0]['landmarks'][9]['y']:.3f}, {hands[0]['landmarks'][9]['z']:.3f})",
-            f"({hands[0]['landmarks'][10]['x']:.3f}, {hands[0]['landmarks'][10]['y']:.3f}, {hands[0]['landmarks'][10]['z']:.3f})",
-            f"({hands[0]['landmarks'][11]['x']:.3f}, {hands[0]['landmarks'][11]['y']:.3f}, {hands[0]['landmarks'][11]['z']:.3f})",
-            f"({hands[0]['landmarks'][12]['x']:.3f}, {hands[0]['landmarks'][12]['y']:.3f}, {hands[0]['landmarks'][12]['z']:.3f})\n",)
+        # self.pc += 1
+        # if self.pc > 37:
+        #     self.pc = 0
+        #     print("index finger:",
+        #     f"({hands[0]['landmarks'][5]['x']:.3f}, {hands[0]['landmarks'][5]['y']:.3f}, {hands[0]['landmarks'][5]['z']:.3f})",
+        #     f"({hands[0]['landmarks'][6]['x']:.3f}, {hands[0]['landmarks'][6]['y']:.3f}, {hands[0]['landmarks'][6]['z']:.3f})",
+        #     f"({hands[0]['landmarks'][7]['x']:.3f}, {hands[0]['landmarks'][7]['y']:.3f}, {hands[0]['landmarks'][7]['z']:.3f})",
+        #     f"({hands[0]['landmarks'][8]['x']:.3f}, {hands[0]['landmarks'][8]['y']:.3f}, {hands[0]['landmarks'][8]['z']:.3f})",)
+        #     print("middle finger:",
+        #     f"({hands[0]['landmarks'][9]['x']:.3f}, {hands[0]['landmarks'][9]['y']:.3f}, {hands[0]['landmarks'][9]['z']:.3f})",
+        #     f"({hands[0]['landmarks'][10]['x']:.3f}, {hands[0]['landmarks'][10]['y']:.3f}, {hands[0]['landmarks'][10]['z']:.3f})",
+        #     f"({hands[0]['landmarks'][11]['x']:.3f}, {hands[0]['landmarks'][11]['y']:.3f}, {hands[0]['landmarks'][11]['z']:.3f})",
+        #     f"({hands[0]['landmarks'][12]['x']:.3f}, {hands[0]['landmarks'][12]['y']:.3f}, {hands[0]['landmarks'][12]['z']:.3f})\n",)
 
-            index_tip_x = hands[0]['landmarks'][8]['x']
-            middle_tip_x = hands[0]['landmarks'][12]['x']
-            index_base_x = hands[0]['landmarks'][5]['x']
-            middle_base_x = hands[0]['landmarks'][9]['x']
-            # 假設以 x 軸為判斷基準（左右交錯）
-            index_left_of_middle = index_tip_x < middle_tip_x
-            base_left_of_middle = index_base_x < middle_base_x
-            # 若 tip 和 base 的左右關係不同，代表交叉
-            crossed = (index_left_of_middle != base_left_of_middle)
-            if crossed:
-                print("食指與中指交叉！")
+        #     index_tip_x = hands[0]['landmarks'][8]['x']
+        #     middle_tip_x = hands[0]['landmarks'][12]['x']
+        #     index_base_x = hands[0]['landmarks'][5]['x']
+        #     middle_base_x = hands[0]['landmarks'][9]['x']
+        #     # 假設以 x 軸為判斷基準（左右交錯）
+        #     index_left_of_middle = index_tip_x < middle_tip_x
+        #     base_left_of_middle = index_base_x < middle_base_x
+        #     # 若 tip 和 base 的左右關係不同，代表交叉
+        #     crossed = (index_left_of_middle != base_left_of_middle)
+        #     if crossed:
+        #         print("食指與中指交叉！")
                 # sc.fork(self.play_gesture)
                 # for i in range(len(self.gesture_list['arpeggio'])):
                 #     self.theremin.play_note(self.scale[self.gesture_list['arpeggio'][i]],
@@ -312,3 +314,4 @@ class VelomaInstrument:
     @staticmethod
     def _round_value(current: float) -> int:
         return int(current)
+
