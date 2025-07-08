@@ -323,11 +323,8 @@ class VelomaUI(QMainWindow):
             return
 
         try:
-            # Resize frame to match display size
-            resized_frame = cv2.resize(frame, (self.camera_width, self.camera_height))
-
             # Convert BGR to RGB (OpenCV uses BGR by default)
-            rgb_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             self._display_image(rgb_frame)
 
