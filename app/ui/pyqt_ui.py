@@ -95,7 +95,7 @@ class VelomaUI(QMainWindow):
     def _create_audio_panel(self, parent_layout):
         """Create audio control panel."""
         audio_group = QGroupBox("Audio Control")
-        audio_group.setFixedWidth(300)
+        audio_group.setFixedWidth(350)
         audio_layout = QVBoxLayout(audio_group)
 
         # Current parameters section
@@ -328,12 +328,12 @@ class VelomaUI(QMainWindow):
         if self.pitch_slider:
             self.pitch_slider.setValue(int(pitch))
         if self.pitch_value_label:
-            self.pitch_value_label.setText(f"{pitch:.1f}")
+            self.pitch_value_label.setText(f"{pitch:.3f}")
 
         if self.volume_slider:
             self.volume_slider.setValue(int(volume * 100))
         if self.volume_value_label:
-            self.volume_value_label.setText(f"{volume:.2f}")
+            self.volume_value_label.setText(f"{volume:.3f}")
 
     def update_hands_count(self, count: int):
         """Update hands detected count."""
