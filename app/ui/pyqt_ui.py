@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QSizePolicy, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox, QCheckBox
 )
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QPixmap, QImage, QCloseEvent, QCursor
 import cv2
 import numpy as np
@@ -11,6 +11,8 @@ from app.music import DEFAULT_GLIDE_MODE, get_scale_names
 
 
 class VelomaUI(QMainWindow):
+    camera_frame_signal = pyqtSignal(object)
+
     def __init__(self):
         super().__init__()
         self.is_running = False
@@ -39,6 +41,8 @@ class VelomaUI(QMainWindow):
         self.pitch_value_label: Optional[QLabel] = None
         self.volume_value_label: Optional[QLabel] = None
         self.smoothing_value_label: Optional[QLabel] = None
+
+        self.camera_frame_signal.connect(self.update_camera_frame)
 
         self.setup()
 

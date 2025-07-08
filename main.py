@@ -126,7 +126,7 @@ class VelomaApp:
                             frame_with_landmarks = self.hand_tracker.draw_note_boundaries(
                                 frame_with_landmarks, num_notes, region_start, region_end
                             )
-                        self.ui.update_camera_frame(frame_with_landmarks)
+                        self.ui.camera_frame_signal.emit(frame_with_landmarks)
                     self.ui.update_audio_params(
                         self.instrument.current_pitch,
                         self.instrument.current_volume
@@ -135,7 +135,7 @@ class VelomaApp:
                     # No valid hand data for too long: force note off
                     self.instrument.update_from_vision({'hands': []})
                     if frame is not None:
-                        self.ui.update_camera_frame(frame)
+                        self.ui.camera_frame_signal.emit(frame)
 
                 time.sleep(0.01)
             except Exception as e:
