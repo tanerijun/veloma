@@ -17,12 +17,9 @@ import cv2
 import time
 from app.vision import HandTracker
 from app.music import VelomaInstrument
+import sys
 
-import scamp as sc
-from scamp_extensions.pitch import Scale
-import random
 class VelomaDemo:
-
     def __init__(self):
         self.tracker = HandTracker()
         self.instrument = VelomaInstrument()
@@ -32,6 +29,10 @@ class VelomaDemo:
         self.last_hand_data = None
         self.last_hand_time = 0
         self.hand_hold_timeout = 0.5  # seconds to hold last hand data on dropout
+
+    def _on_hand_data(self, hand_data):
+        self.last_hand_data = hand_data
+        self.last_hand_time = time.time()
 
     def run(self):
         print("Veloma Demo - Core Functionality Test")
@@ -57,6 +58,7 @@ class VelomaDemo:
             self.instrument.stop_audio()
             return
 
+        self.tracker.start_async(self._on_hand_data)
         self.is_running = True
 
         print("Camera and audio started successfully!")
@@ -64,12 +66,10 @@ class VelomaDemo:
 
         try:
             while self.is_running:
-                hand_data = self.tracker.get_hand_positions()
                 now = time.time()
+                hand_data = self.last_hand_data
 
                 if hand_data and hand_data.get('hands'):
-                    self.last_hand_data = hand_data
-                    self.last_hand_time = now
                     use_hand_data = hand_data
                 else:
                     # Use cached hand data only if within timeout
@@ -171,6 +171,7 @@ class VelomaDemo:
 
         self.is_running = False
         self.instrument.stop_audio()
+        self.tracker.stop_async()
         self.tracker.stop_camera()
         cv2.destroyAllWindows()
 
@@ -189,5 +190,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
     sys.exit(main())

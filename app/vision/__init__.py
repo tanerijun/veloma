@@ -1,58 +1,29 @@
 import cv2
-import mediapipe as mp
 import numpy as np
-from typing import Optional, Tuple, Dict, Any
 import threading
 import time
+from typing import Tuple, Dict, Any
 
+from mediapipe.tasks.python.vision import HandLandmarker, HandLandmarkerOptions, RunningMode
+from mediapipe.tasks.python.core.base_options import BaseOptions
+from mediapipe import Image as MPImage, ImageFormat as MPImageFormat
 
 class HandTracker:
-    """Hand tracking using MediaPipe."""
-
-    def __init__(self):
-        self.mp_hands = mp.solutions.hands # type: ignore
-        self.mp_drawing = mp.solutions.drawing_utils # type: ignore
-        print(self.mp_hands)
-        print(self.mp_drawing)
-        self.hands = self.mp_hands.Hands(
-            static_image_mode=False,
-            max_num_hands=2,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
-        )
+    def __init__(self, model_path="app/vision/hand_landmarker.task"):
         self.cap = None
         self.is_running = False
-
-    def start_async(self, on_hand_data):
-        """
-        Start hand tracking in a background thread.
-        on_hand_data: function to call with hand_data dict (or None) for each frame.
-        """
-        if hasattr(self, '_thread') and self._thread and self._thread.is_alive():
-            return
-
+        self._thread = None
         self._async_stop = False
-        self._on_hand_data = on_hand_data
-        self._thread = threading.Thread(target=self._async_loop)
-        self._thread.daemon = True
-        self._thread.start()
+        self._on_hand_data = None
 
-    def stop_async(self):
-        """Stop the background hand tracking thread."""
-        self._async_stop = True
-        if hasattr(self, '_thread') and self._thread:
-            self._thread.join(timeout=2.0)
-            self._thread = None
-
-    def _async_loop(self):
-        while not getattr(self, '_async_stop', False):
-            hand_data = self.get_hand_positions()
-            if hasattr(self, '_on_hand_data') and self._on_hand_data:
-                self._on_hand_data(hand_data)
-            time.sleep(0.01)
+        options = HandLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=model_path),
+            running_mode=RunningMode.LIVE_STREAM,
+            result_callback=self._result_callback
+        )
+        self.hand_landmarker = HandLandmarker.create_from_options(options)
 
     def start_camera(self) -> bool:
-        """Start the camera capture."""
         try:
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
@@ -64,114 +35,102 @@ class HandTracker:
             return False
 
     def stop_camera(self):
-        """Stop the camera capture."""
         self.is_running = False
         if self.cap:
             self.cap.release()
             self.cap = None
-        if self.hands:
-            self.hands.close()
+        if self.hand_landmarker:
+            self.hand_landmarker.close()
 
-    def get_hand_positions(self) -> Optional[Dict[str, Any]]:
-        """
-        Get current hand positions from camera.
-        Returns dict with hand position data or None if no hands detected.
-        """
-        if not self.cap or not self.is_running:
-            print("WARN: Camera not available or not running")
-            return None
+    def start_async(self, on_hand_data):
+        if self._thread and self._thread.is_alive():
+            return
+        self._async_stop = False
+        self._on_hand_data = on_hand_data
+        self._thread = threading.Thread(target=self._async_loop)
+        self._thread.daemon = True
+        self._thread.start()
 
-        ret, frame = self.cap.read()
-        if not ret:
-            print("WARN: Failed to read frame from camera")
-            return None
+    def stop_async(self):
+        self._async_stop = True
+        if self._thread:
+            self._thread.join(timeout=2.0)
+            self._thread = None
 
-        # Flip frame horizontally for mirror effect
-        frame = cv2.flip(frame, 1)
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    def _async_loop(self):
+        while not self._async_stop:
+            if not self.cap or not self.is_running:
+                time.sleep(0.01)
+                continue
+            ret, frame = self.cap.read()
+            if not ret:
+                time.sleep(0.01)
+                continue
+            frame = cv2.flip(frame, 1)
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            timestamp_ms = int(time.time() * 1000)
+            # Store frame for callback
+            self._latest_frame = frame
+            mp_image = MPImage(image_format=MPImageFormat.SRGB, data=rgb_frame)
+            self.hand_landmarker.detect_async(mp_image, timestamp_ms)
+            time.sleep(0.01)
 
-        results = self.hands.process(rgb_frame)
-
+    def _result_callback(self, result, output_image, timestamp_ms):
+        # Called from MediaPipe thread
+        # Prepare hand_data dict similar to your old API
         hand_data = {
-            'frame': frame,
+            'frame': getattr(self, '_latest_frame', None),
             'hands': [],
-            'timestamp': cv2.getTickCount()
+            'timestamp': timestamp_ms
         }
-
-        if results.multi_hand_landmarks:
-            for idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
-                landmarks = []
-                for landmark in hand_landmarks.landmark:
-                    landmarks.append({
+        if result and result.hand_landmarks:
+            for idx, landmarks in enumerate(result.hand_landmarks):
+                landmark_list = []
+                for landmark in landmarks:
+                    landmark_list.append({
                         'x': landmark.x,
                         'y': landmark.y,
                         'z': landmark.z
                     })
-
-                palm_center = self._calculate_palm_center(landmarks)
-
+                palm_center = self._calculate_palm_center(landmark_list)
                 hand_info = {
-                    'landmarks': landmarks,
+                    'landmarks': landmark_list,
                     'palm_center': palm_center,
                     'hand_index': idx
                 }
-
                 hand_data['hands'].append(hand_info)
-
-        return hand_data
+        if self._on_hand_data:
+            self._on_hand_data(hand_data)
 
     def _calculate_palm_center(self, landmarks) -> Tuple[float, float]:
-        """Calculate approximate palm center from landmarks."""
-        # Use wrist and middle finger MCP joint as reference points
-        wrist = landmarks[0]  # Wrist
-        middle_mcp = landmarks[9]  # Middle finger MCP joint
-
+        wrist = landmarks[0]
+        middle_mcp = landmarks[9]
         center_x = (wrist['x'] + middle_mcp['x']) / 2
         center_y = (wrist['y'] + middle_mcp['y']) / 2
-
         return (center_x, center_y)
 
     def draw_landmarks(self, frame, hand_data: Dict[str, Any]) -> np.ndarray:
-        """Draw hand landmarks on frame for visualization."""
+        # You can keep your existing implementation here
         if not hand_data or not hand_data['hands']:
             return frame
-
         for hand_info in hand_data['hands']:
-            # Convert normalized coordinates to pixel coordinates
             h, w, _ = frame.shape
             landmarks = hand_info['landmarks']
-
-            # Draw landmarks
-            for i, landmark in enumerate(landmarks):
+            for landmark in landmarks:
                 x = int(landmark['x'] * w)
                 y = int(landmark['y'] * h)
-
-                # if i == 0:
-                #     color = (0, 255, 255)  # 掌根 - 黃色
-                # elif 5 <= i <= 8:
-                #     color = (255, 0, 0)    # 食指 - 藍色
-                # else:
                 color = (0, 255, 0)
-
                 cv2.circle(frame, (x, y), 4, color, -1)
-
-            # Draw palm center
             palm_x, palm_y = hand_info['palm_center']
             palm_pixel_x = int(palm_x * w)
             palm_pixel_y = int(palm_y * h)
             cv2.circle(frame, (palm_pixel_x, palm_pixel_y), 10, (255, 0, 0), -1)
-
         return frame
 
     def draw_note_boundaries(self, frame, num_notes, region_start=0.5, region_end=0.9, color=(255, 255, 255)):
-        """
-        Draw vertical lines on the frame to indicate note boundaries.
-        region_start, region_end: normalized (0.0-1.0) X positions
-        """
         h, w, _ = frame.shape
         region_width = region_end - region_start
         block_width = region_width / num_notes
-
         for i in range(num_notes + 1):
             x_norm = region_start + i * block_width
             x_px = int(x_norm * w)
