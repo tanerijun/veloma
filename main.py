@@ -98,6 +98,10 @@ class VelomaApp:
                 hand_data = self.hand_tracker.get_hand_positions()
                 now = time.time()
 
+                frame = None
+                if hand_data:
+                    frame = hand_data.get('frame')
+
                 if hand_data and hand_data.get('hands'):
                     self.last_hand_data = hand_data
                     self.last_hand_time = now
@@ -111,7 +115,6 @@ class VelomaApp:
 
                 if use_hand_data is not None:
                     self.instrument.update_from_vision(use_hand_data)
-                    frame = use_hand_data.get('frame')
                     if frame is not None:
                         frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, use_hand_data)
                         self.ui.update_camera_frame(frame_with_landmarks)
@@ -122,6 +125,8 @@ class VelomaApp:
                 else:
                     # No valid hand data for too long: force note off
                     self.instrument.update_from_vision({'hands': []})
+                    if frame is not None:
+                        self.ui.update_camera_frame(frame)
 
                 time.sleep(0.01)
             except Exception as e:
