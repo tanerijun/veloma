@@ -39,6 +39,9 @@ class HandTracker:
         if self.cap:
             self.cap.release()
             self.cap = None
+        if self.hands:
+            self.hands.close()
+            self.hands = None
 
     def get_hand_positions(self) -> Optional[Dict[str, Any]]:
         """
