@@ -41,8 +41,6 @@ class VelomaInstrument:
     """Virtual Theremin-like instrument using SCAMP with real-time parameter control."""
 
     def __init__(self):
-        self.pc = 0
-
         self.session = sc.Session()
         self.session = sc.Session(default_soundfont=soundFontPath_7777777)
         # self.session = sc.Session(default_soundfont=soundFontPath_theremin_high)
@@ -75,30 +73,6 @@ class VelomaInstrument:
 
         self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12) # 12 semitones per octave
         self.volume_range = (0.0, 1.0)
-
-        self.gesture_list= {
-            "arpeggio":[0,2,4,2,0],
-            "greeting":[1,2,1,2,1,2,0],
-            "greeting_arc":[1,2,1,2,1,2,0.5],
-            "haha":[1,1,1,1,1,1,1],
-            "haha_arc":[1,1,-0.5,1,-0.5,1,1],
-            "down":[4,3,2,1],
-            "down_arc":[4,2,3,1],
-            "up":[1,2,3,4],
-            "up_arc":[1,3,2,4],
-            "nonesence":[7,3,1,7],
-            "nonesence":[7,3,1,7],
-            "arpeggio_arc":[0,3,5,3,0],
-            "arpeggio2":[0,2,4,2,4,2],
-            "arpeggio2_arc":[0,3,5,3,5,3],
-            "bridge":[0,7,1.5,0.5],
-            "bridge_arc":[0,7,1,0],
-            "ending":[8.5,6,5,4,4.5,4,2.5,4,5,5.5],
-            "ending_arc":[8,7,5,4,5,2,4,5,4,5],
-            "ending2":[5,5,5,5,1,1],
-            "ending3":[3,3,3,2,2],
-            "final":[0]
-        }
 
         # Smoothing parameters - much higher for real-time response
         self.pitch_smoothing = 1
@@ -146,41 +120,6 @@ class VelomaInstrument:
         hands = hand_data["hands"]
         self.hands_detected = True
 
-        self.pc += 1
-        if self.pc > 37:
-            self.pc = 0
-            print("index finger:",
-            f"({hands[0]['landmarks'][5]['x']:.3f}, {hands[0]['landmarks'][5]['y']:.3f}, {hands[0]['landmarks'][5]['z']:.3f})",
-            f"({hands[0]['landmarks'][6]['x']:.3f}, {hands[0]['landmarks'][6]['y']:.3f}, {hands[0]['landmarks'][6]['z']:.3f})",
-            f"({hands[0]['landmarks'][7]['x']:.3f}, {hands[0]['landmarks'][7]['y']:.3f}, {hands[0]['landmarks'][7]['z']:.3f})",
-            f"({hands[0]['landmarks'][8]['x']:.3f}, {hands[0]['landmarks'][8]['y']:.3f}, {hands[0]['landmarks'][8]['z']:.3f})",)
-            print("middle finger:",
-            f"({hands[0]['landmarks'][9]['x']:.3f}, {hands[0]['landmarks'][9]['y']:.3f}, {hands[0]['landmarks'][9]['z']:.3f})",
-            f"({hands[0]['landmarks'][10]['x']:.3f}, {hands[0]['landmarks'][10]['y']:.3f}, {hands[0]['landmarks'][10]['z']:.3f})",
-            f"({hands[0]['landmarks'][11]['x']:.3f}, {hands[0]['landmarks'][11]['y']:.3f}, {hands[0]['landmarks'][11]['z']:.3f})",
-            f"({hands[0]['landmarks'][12]['x']:.3f}, {hands[0]['landmarks'][12]['y']:.3f}, {hands[0]['landmarks'][12]['z']:.3f})\n",)
-
-            index_tip_x = hands[0]['landmarks'][8]['x']
-            middle_tip_x = hands[0]['landmarks'][12]['x']
-            index_base_x = hands[0]['landmarks'][5]['x']
-            middle_base_x = hands[0]['landmarks'][9]['x']
-            # 假設以 x 軸為判斷基準（左右交錯）
-            index_left_of_middle = index_tip_x < middle_tip_x
-            base_left_of_middle = index_base_x < middle_base_x
-            # 若 tip 和 base 的左右關係不同，代表交叉
-            crossed = (index_left_of_middle != base_left_of_middle)
-            if crossed:
-                print("食指與中指交叉！")
-                sc.fork(self.play_gesture)
-                # for i in range(len(self.gesture_list['arpeggio'])):
-                #     self.theremin.play_note(self.scale[self.gesture_list['arpeggio'][i]],
-                #         self.current_volume,
-                #         1,
-                #         blocking=False
-                #         )
-                #     sc.wait(1)
-            # else:
-            #     self.theremin.end_all_notes()
         if len(hands) >= 1:
             # Use first hand for pitch control (vertical position)
             primary_hand = hands[0]
@@ -213,7 +152,6 @@ class VelomaInstrument:
                 pitch_x = right_hand["palm_center"][0]
                 if self.glide_mode:
                     # 音高：右手（看 x）
-
                     # 0.5~1
                     # pitch_x_clamped = max(0.5, min(1.0, pitch_x))
                     self.target_pitch = self._map_range(
@@ -304,13 +242,6 @@ class VelomaInstrument:
         if scale_name in SCALES:
             self.scale_name = scale_name
             self.pitch_pool = self._generate_pitch_pool(scale_name)
-
-    def play_gesture(self, gesture_name: str = "arpeggio"):
-        for i in range(len(self.gesture_list['arpeggio'])):
-            self.theremin.play_note(self.gesture_list[gesture_name][i], self.current_volume, 1, blocking=False)
-            sc.wait(1)
-
-        self.theremin.end_all_notes()
 
     def _generate_pitch_pool(self, scale_name: str) -> list:
         if scale_name == "chromatic":
