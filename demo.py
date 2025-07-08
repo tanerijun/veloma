@@ -57,7 +57,7 @@ class VelomaDemo:
 
         print("Camera and audio started successfully!")
         print("Move your hands to make music!")
-     
+
         try:
             while self.is_running:
                 # Get hand data
@@ -70,7 +70,7 @@ class VelomaDemo:
                     else:
                         # Fade out when audio disabled
                         self.instrument.update_from_vision({'hands': []})
-                      
+
 
                     # Display frame with landmarks
                     frame = hand_data['frame']
@@ -118,9 +118,9 @@ class VelomaDemo:
         # Current parameters
         pitch = self.instrument.current_pitch
         volume = self.instrument.current_volume
-        cv2.putText(frame, f"Pitch: {pitch:.1f}", (10, 90),
+        cv2.putText(frame, f"Pitch: {pitch:.3f}", (10, 90),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-        cv2.putText(frame, f"Volume: {volume:.2f}", (10, 120),
+        cv2.putText(frame, f"Volume: {volume:.3f}", (10, 120),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
         # Instructions

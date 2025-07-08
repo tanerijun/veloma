@@ -64,8 +64,7 @@ class VelomaInstrument:
         self.is_note_playing = False
 
         # Hand position mapping ranges
-        self.glide_mode=False
-        # self.glide_mode=True
+        self.glide_mode=True
         self.start_key = 60.0
         self.octave_range = 2
 
@@ -257,7 +256,7 @@ class VelomaInstrument:
                 if self.is_note_playing:
                     self._stop_current_note()
 
-            time.sleep(0.001) # ~1000 Hz update rate
+            time.sleep(0.0001)
 
         self._stop_current_note()
         print("Audio loop ended")
