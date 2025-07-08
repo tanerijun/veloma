@@ -27,6 +27,7 @@ SCALES = {
 }
 
 DEFAULT_GLIDE_MODE = False
+PITCH_X_MARGIN = 0.03 # 3% margin on the right
 
 def get_scale_names():
     return list(SCALES.keys())
@@ -134,10 +135,10 @@ class VelomaInstrument:
             if self.glide_mode:
                 # pitch_x_clamped = max(0.5, min(1.0, palm_x))
                 self.target_pitch = self._map_range(
-                    palm_x, 0.5, 1.0, *self.pitch_range
+                    palm_x, 0.5, 1.0 - PITCH_X_MARGIN, *self.pitch_range
                 )
             else:
-                mapped_index_float = self._map_range(palm_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
+                mapped_index_float = self._map_range(palm_x, 0.5, 1.0 - PITCH_X_MARGIN, 0, len(self.pitch_pool) - 1 )
                 mapped_index = int(round(mapped_index_float))
                 self.target_pitch=self.pitch_pool[mapped_index]
 
@@ -161,10 +162,10 @@ class VelomaInstrument:
                     # 0.5~1
                     # pitch_x_clamped = max(0.5, min(1.0, pitch_x))
                     self.target_pitch = self._map_range(
-                        pitch_x, 0.5, 1.0, *self.pitch_range
+                        pitch_x, 0.5, 1.0 - PITCH_X_MARGIN, *self.pitch_range
                     )
                 else:
-                    mapped_index_float = self._map_range(pitch_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
+                    mapped_index_float = self._map_range(pitch_x, 0.5, 1.0 - PITCH_X_MARGIN, 0, len(self.pitch_pool) - 1 )
                     mapped_index = int(round(mapped_index_float))
                     self.target_pitch=self.pitch_pool[mapped_index]
 
