@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QApplication, QMainWindow, QSizePolicy, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QTimer
@@ -104,6 +104,8 @@ class VelomaUI(QMainWindow):
         self._create_audio_panel(content_layout)
 
         parent_layout.addLayout(content_layout)
+        content_layout.setStretch(0, 1)
+        content_layout.setStretch(1, 0)
 
     def _create_camera_panel(self, parent_layout):
         """Create camera preview panel."""
@@ -112,7 +114,8 @@ class VelomaUI(QMainWindow):
 
         # Camera display - make it larger
         self.camera_label = QLabel()
-        self.camera_label.setFixedSize(self.camera_width, self.camera_height)
+        self.camera_label.setMinimumSize(self.camera_width, self.camera_height)
+        self.camera_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.camera_label.setStyleSheet("border: 2px solid #ccc; background-color: #000;")
         self.camera_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         camera_layout.addWidget(self.camera_label)
@@ -123,6 +126,7 @@ class VelomaUI(QMainWindow):
     def _create_audio_panel(self, parent_layout):
         """Create audio control panel."""
         audio_group = QGroupBox("Audio Control")
+        audio_group.setFixedWidth(300)
         audio_layout = QVBoxLayout(audio_group)
 
         # Current parameters section
@@ -206,7 +210,6 @@ class VelomaUI(QMainWindow):
         instructions_layout = QVBoxLayout(instructions_group)
 
         instructions = [
-            "• Application starts automatically",
             "• Move your hand up/down to control pitch",
             "• Move your hand left/right to control volume",
             "• Use two hands for advanced control"
@@ -219,23 +222,6 @@ class VelomaUI(QMainWindow):
 
         audio_layout.addWidget(instructions_group)
 
-        # Status section
-        status_group = QGroupBox("Status")
-        status_layout = QVBoxLayout(status_group)
-
-        self.camera_status_label = QLabel("Status: Running")
-        self.hands_count_label = QLabel("Hands Detected: 0")
-        self.frames_count_label = QLabel("Frames Processed: 0")
-        self.last_update_label = QLabel("Last Update: Never")
-
-        status_labels = [self.camera_status_label, self.hands_count_label,
-                        self.frames_count_label, self.last_update_label]
-
-        for label in status_labels:
-            label.setStyleSheet("margin: 2px; font-family: monospace;")
-            status_layout.addWidget(label)
-
-        audio_layout.addWidget(status_group)
         audio_layout.addStretch()
 
         parent_layout.addWidget(audio_group)
@@ -268,8 +254,10 @@ class VelomaUI(QMainWindow):
             bytes_per_line = 3 * width
             q_image = QImage(image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
             pixmap = QPixmap.fromImage(q_image)
-            scaled_pixmap = pixmap.scaled(self.camera_width, self.camera_height, Qt.AspectRatioMode.KeepAspectRatio)
             if self.camera_label:
+                label_width = self.camera_label.width()
+                label_height = self.camera_label.height()
+                scaled_pixmap = pixmap.scaled(label_width, label_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                 self.camera_label.setPixmap(scaled_pixmap)
         except Exception as e:
             print(f"Error displaying image: {e}")
