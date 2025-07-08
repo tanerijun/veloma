@@ -113,10 +113,10 @@ class VelomaApp:
                     else:
                         use_hand_data = None
 
-                if use_hand_data is not None:
+                if hand_data:
                     self.instrument.update_from_vision(use_hand_data)
                     if frame is not None:
-                        frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, use_hand_data)
+                        frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, hand_data)
                         self.ui.update_camera_frame(frame_with_landmarks)
                     self.ui.update_audio_params(
                         self.instrument.current_pitch,
