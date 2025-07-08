@@ -62,8 +62,6 @@ class VelomaUI(QMainWindow):
 
         self._create_main_content(main_layout)
 
-        self._setup_camera_display()
-
     def _create_main_content(self, parent_layout):
         """Create the main content area."""
         content_layout = QHBoxLayout()
@@ -230,27 +228,6 @@ class VelomaUI(QMainWindow):
 
         audio_layout.addStretch()
         parent_layout.addWidget(audio_group)
-
-    def _setup_camera_display(self):
-        """Setup initial camera display with test pattern."""
-        # Create test pattern
-        test_image = np.zeros((self.camera_height, self.camera_width, 3), dtype=np.uint8)
-
-        # Create checkerboard pattern
-        for y in range(self.camera_height):
-            for x in range(self.camera_width):
-                if (x // 32 + y // 32) % 2:
-                    test_image[y, x] = [100, 100, 100]  # Gray
-                else:
-                    test_image[y, x] = [50, 50, 50]   # Darker gray
-
-        # Add border
-        test_image[0:5, :] = [0, 255, 0]  # Green border
-        test_image[-5:, :] = [0, 255, 0]
-        test_image[:, 0:5] = [0, 255, 0]
-        test_image[:, -5:] = [0, 255, 0]
-
-        self._display_image(test_image)
 
     def _display_image(self, image):
         """Display an image in the camera label."""
