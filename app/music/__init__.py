@@ -86,10 +86,10 @@ class VelomaInstrument:
         self.min_volume_threshold = 0.3  # Minimum volume to start / maintain note
 
         # Beginner mode
-        self.last_hand_position = None
         self.note_played_recently = False
         self.note_play_cooldown = 0.2  # seconds
         self.last_note_time = 0
+        self.last_note_index = None
 
     def start_audio(self):
         """Start the audio processing thread."""
@@ -205,20 +205,22 @@ class VelomaInstrument:
                         self._stop_current_note()
             else:
                 if should_play:
-                    hand_pos = (self.target_pitch, self.target_volume)
+                    try:
+                        note_index = self.pitch_pool.index(round(self.target_pitch))
+                    except ValueError:
+                        note_index = None
+
                     now = time.time()
-                    # Play note if hand moved significantly or after cooldown
                     if (
-                        self.last_hand_position is None
-                        or abs(hand_pos[0] - self.last_hand_position[0]) > 0.5  # adjust threshold as needed
-                        or abs(hand_pos[1] - self.last_hand_position[1]) > 0.1
+                        note_index is not None
+                        and (self.last_note_index is None or note_index != self.last_note_index)
+                        and now - self.last_note_time > self.note_play_cooldown
                     ):
-                        if now - self.last_note_time > self.note_play_cooldown:
-                            self.theremin.play_note(self.current_pitch, self.current_volume, 0.4)
-                            self.last_note_time = now
-                            self.last_hand_position = hand_pos
+                        self.theremin.play_note(self.pitch_pool[note_index], self.current_volume, 0.4)
+                        self.last_note_time = now
+                        self.last_note_index = note_index
                 else:
-                    self.last_hand_position = None
+                    self.last_note_index = None
 
             time.sleep(0.0001)
 
