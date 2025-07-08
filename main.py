@@ -87,6 +87,14 @@ class VelomaApp:
         # Update glide mode
         self.instrument.glide_mode = settings.get('glide_mode', False)
 
+        if self.instrument.glide_mode:
+            self.instrument.set_instrument("Theremin")
+            # If hands are detected and should_play, start note immediately
+            if self.last_hand_data and self.last_hand_data.get("hands"):
+                self.instrument.update_from_vision(self.last_hand_data)
+        else:
+            self.instrument.set_instrument("Piano")
+
         print(f"Settings updated: {settings}")
 
     def _main_loop(self):

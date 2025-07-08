@@ -213,7 +213,6 @@ class VelomaInstrument:
                         or abs(hand_pos[1] - self.last_hand_position[1]) > 0.1
                     ):
                         if now - self.last_note_time > self.note_play_cooldown:
-                            print("PLAYING NOTE")
                             self.theremin.play_note(self.current_pitch, self.current_volume, 0.4)
                             self.last_note_time = now
                             self.last_hand_position = hand_pos
@@ -256,6 +255,7 @@ class VelomaInstrument:
                 self.current_notes = []
                 self.is_note_playing = False
                 self.theremin.send_midi_cc(64, 0)
+                self.theremin.end_all_notes()
             except Exception as e:
                 print(f"Error stopping note: {e}")
                 self.current_notes = []
@@ -275,6 +275,14 @@ class VelomaInstrument:
             # Use the scale generator
             return [pitch for pitch in SCALES[scale_name](self.start_key)
                     if pitch <= self.start_key + self.octave_range * 12.0]
+
+    def set_instrument(self, instrument_name: str):
+        self._stop_current_note()
+        self.theremin.remove_soundfont_playback()
+        self.theremin = self.session.new_part(instrument_name)
+        self.theremin.send_midi_cc(64, 0)
+        self.is_note_playing = False
+        self.current_notes = []
 
     @staticmethod
     def _map_range(
