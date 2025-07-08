@@ -1,13 +1,13 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox
+    QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QImage, QFont, QCloseEvent
 import cv2
 import numpy as np
 from typing import Optional, Callable
-from app.music import get_scale_names
+from app.music import DEFAULT_GLIDE_MODE, get_scale_names
 import time
 
 
@@ -193,6 +193,12 @@ class VelomaUI(QMainWindow):
         settings_layout.addWidget(QLabel("Scale:"), 3, 0)
         settings_layout.addWidget(self.scale_combo, 3, 1, 1, 2)
 
+        # Glide mode checkbox
+        self.glide_checkbox = QCheckBox("Advanced Mode")
+        self.glide_checkbox.setChecked(DEFAULT_GLIDE_MODE)
+        self.glide_checkbox.stateChanged.connect(self._on_settings_changed)
+        settings_layout.addWidget(self.glide_checkbox, 4, 0, 1, 3)
+
         audio_layout.addWidget(settings_group)
 
         # Instructions section
@@ -304,12 +310,13 @@ class VelomaUI(QMainWindow):
         if self.smoothing_value_label and self.smoothing_slider:
             self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
 
-        if self.on_settings_change_callback and self.pitch_min_slider and self.pitch_max_slider and self.smoothing_slider and self.scale_combo:
+        if self.on_settings_change_callback and self.pitch_min_slider and self.pitch_max_slider and self.smoothing_slider and self.scale_combo and self.glide_checkbox:
             settings = {
                 'pitch_range_min': float(self.pitch_min_slider.value()),
                 'pitch_range_max': float(self.pitch_max_slider.value()),
                 'smoothing': self.smoothing_slider.value() / 100.0,
-                'scale': self.scale_combo.currentText()
+                'scale': self.scale_combo.currentText(),
+                'glide_mode': self.glide_checkbox.isChecked()
             }
             self.on_settings_change_callback(settings)
 

@@ -26,6 +26,8 @@ SCALES = {
     "whole_tone": Scale.whole_tone,
 }
 
+DEFAULT_GLIDE_MODE = False
+
 def get_scale_names():
     return list(SCALES.keys())
 
@@ -64,7 +66,7 @@ class VelomaInstrument:
         self.is_note_playing = False
 
         # Hand position mapping ranges
-        self.glide_mode=True
+        self.glide_mode=DEFAULT_GLIDE_MODE
         self.start_key = 60.0
         self.octave_range = 2
 

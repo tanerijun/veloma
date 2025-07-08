@@ -79,6 +79,9 @@ class VelomaApp:
         scale_name = settings.get('scale', get_scale_names()[0])
         self.instrument.set_scale(scale_name)
 
+        # Update glide mode
+        self.instrument.glide_mode = settings.get('glide_mode', False)
+
         print(f"Settings updated: {settings}")
 
     def _main_loop(self):
