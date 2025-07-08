@@ -119,12 +119,9 @@ class VelomaApp:
                         self.instrument.current_pitch,
                         self.instrument.current_volume
                     )
-                    hands_count = len(use_hand_data.get('hands', []))
-                    self.ui.update_hands_count(hands_count)
                 else:
                     # No valid hand data for too long: force note off
                     self.instrument.update_from_vision({'hands': []})
-                    self.ui.update_hands_count(0)
 
                 time.sleep(0.01)
             except Exception as e:

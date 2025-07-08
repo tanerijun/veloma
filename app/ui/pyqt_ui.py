@@ -34,18 +34,11 @@ class VelomaUI(QMainWindow):
         # UI elements
         self.camera_label: Optional[QLabel] = None
         self.camera_status_label: Optional[QLabel] = None
-        self.hands_count_label: Optional[QLabel] = None
-        self.frames_count_label: Optional[QLabel] = None
-        self.last_update_label: Optional[QLabel] = None
         self.pitch_slider: Optional[QSlider] = None
         self.volume_slider: Optional[QSlider] = None
-        self.pitch_min_slider: Optional[QSlider] = None
-        self.pitch_max_slider: Optional[QSlider] = None
         self.smoothing_slider: Optional[QSlider] = None
         self.pitch_value_label: Optional[QLabel] = None
         self.volume_value_label: Optional[QLabel] = None
-        self.pitch_min_value_label: Optional[QLabel] = None
-        self.pitch_max_value_label: Optional[QLabel] = None
         self.smoothing_value_label: Optional[QLabel] = None
 
         self.setup()
@@ -273,10 +266,6 @@ class VelomaUI(QMainWindow):
     def _on_settings_changed(self):
         """Handle settings slider changes."""
         # Update slider value labels
-        if self.pitch_min_value_label and self.pitch_min_slider:
-            self.pitch_min_value_label.setText(f"{self.pitch_min_slider.value()}.0")
-        if self.pitch_max_value_label and self.pitch_max_slider:
-            self.pitch_max_value_label.setText(f"{self.pitch_max_slider.value()}.0")
         if self.smoothing_value_label and self.smoothing_slider:
             self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
         if self.start_key_value_label and self.start_key_slider:
@@ -302,20 +291,7 @@ class VelomaUI(QMainWindow):
         try:
             # Convert BGR to RGB (OpenCV uses BGR by default)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
             self._display_image(rgb_frame)
-
-            self.frame_count += 1
-
-            # Update UI status every n frames
-            n = 30
-            if self.frame_count % n == 0:
-                current_time = time.strftime("%H:%M:%S")
-                if self.frames_count_label:
-                    self.frames_count_label.setText(f"Frames Processed: {self.frame_count}")
-                if self.last_update_label:
-                    self.last_update_label.setText(f"Last Update: {current_time}")
-
         except Exception as e:
             print(f"Camera frame update error: {e}")
             self._show_error_pattern()
@@ -328,18 +304,12 @@ class VelomaUI(QMainWindow):
         if self.pitch_slider:
             self.pitch_slider.setValue(int(pitch))
         if self.pitch_value_label:
-            self.pitch_value_label.setText(f"{pitch:.3f}")
+            self.pitch_value_label.setText(f"{pitch:.2f}")
 
         if self.volume_slider:
             self.volume_slider.setValue(int(volume * 100))
         if self.volume_value_label:
             self.volume_value_label.setText(f"{volume:.3f}")
-
-    def update_hands_count(self, count: int):
-        """Update hands detected count."""
-        self.hands_detected = count
-        if self.hands_count_label:
-            self.hands_count_label.setText(f"Hands Detected: {count}")
 
     def set_callbacks(self,
                      on_start: Optional[Callable] = None,
