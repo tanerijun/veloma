@@ -155,25 +155,25 @@ class VelomaUI(QMainWindow):
         settings_group = QGroupBox("Settings")
         settings_layout = QGridLayout(settings_group)
 
-        # Min pitch setting
-        settings_layout.addWidget(QLabel("Min Pitch:"), 0, 0)
-        self.pitch_min_slider = QSlider(Qt.Orientation.Horizontal)
-        self.pitch_min_slider.setRange(20, 60)
-        self.pitch_min_slider.setValue(40)
-        self.pitch_min_slider.valueChanged.connect(self._on_settings_changed)
-        self.pitch_min_value_label = QLabel("40.0")
-        settings_layout.addWidget(self.pitch_min_slider, 0, 1)
-        settings_layout.addWidget(self.pitch_min_value_label, 0, 2)
+        # Start Key setting
+        settings_layout.addWidget(QLabel("Start Key (MIDI):"), 0, 0)
+        self.start_key_slider = QSlider(Qt.Orientation.Horizontal)
+        self.start_key_slider.setRange(20, 80)
+        self.start_key_slider.setValue(60)
+        self.start_key_slider.valueChanged.connect(self._on_settings_changed)
+        self.start_key_value_label = QLabel("60")
+        settings_layout.addWidget(self.start_key_slider, 0, 1)
+        settings_layout.addWidget(self.start_key_value_label, 0, 2)
 
-        # Max pitch setting
-        settings_layout.addWidget(QLabel("Max Pitch:"), 1, 0)
-        self.pitch_max_slider = QSlider(Qt.Orientation.Horizontal)
-        self.pitch_max_slider.setRange(60, 100)
-        self.pitch_max_slider.setValue(80)
-        self.pitch_max_slider.valueChanged.connect(self._on_settings_changed)
-        self.pitch_max_value_label = QLabel("80.0")
-        settings_layout.addWidget(self.pitch_max_slider, 1, 1)
-        settings_layout.addWidget(self.pitch_max_value_label, 1, 2)
+        # Octave Range setting
+        settings_layout.addWidget(QLabel("Octave Range:"), 1, 0)
+        self.octave_range_slider = QSlider(Qt.Orientation.Horizontal)
+        self.octave_range_slider.setRange(1, 5)
+        self.octave_range_slider.setValue(2)
+        self.octave_range_slider.valueChanged.connect(self._on_settings_changed)
+        self.octave_range_value_label = QLabel("2")
+        settings_layout.addWidget(self.octave_range_slider, 1, 1)
+        settings_layout.addWidget(self.octave_range_value_label, 1, 2)
 
         # Smoothing setting
         settings_layout.addWidget(QLabel("Smoothing:"), 2, 0)
@@ -309,11 +309,15 @@ class VelomaUI(QMainWindow):
             self.pitch_max_value_label.setText(f"{self.pitch_max_slider.value()}.0")
         if self.smoothing_value_label and self.smoothing_slider:
             self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
+        if self.start_key_value_label and self.start_key_slider:
+            self.start_key_value_label.setText(f"{self.start_key_slider.value()}")
+        if self.octave_range_value_label and self.octave_range_slider:
+            self.octave_range_value_label.setText(f"{self.octave_range_slider.value()}")
 
-        if self.on_settings_change_callback and self.pitch_min_slider and self.pitch_max_slider and self.smoothing_slider and self.scale_combo and self.glide_checkbox:
+        if self.on_settings_change_callback and self.start_key_slider and self.octave_range_slider and self.smoothing_slider and self.scale_combo and self.glide_checkbox:
             settings = {
-                'pitch_range_min': float(self.pitch_min_slider.value()),
-                'pitch_range_max': float(self.pitch_max_slider.value()),
+                'start_key': int(self.start_key_slider.value()),
+                'octave_range': int(self.octave_range_slider.value()),
                 'smoothing': self.smoothing_slider.value() / 100.0,
                 'scale': self.scale_combo.currentText(),
                 'glide_mode': self.glide_checkbox.isChecked()

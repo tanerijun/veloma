@@ -65,10 +65,11 @@ class VelomaApp:
     def _update_settings(self, settings: Dict[str, Any]):
         """Update instrument settings from UI."""
         # Update pitch range
-        self.instrument.pitch_range = (
-            settings.get('pitch_range_min', 40.0),
-            settings.get('pitch_range_max', 80.0)
-        )
+        start_key = settings.get('start_key', 60)
+        octave_range = settings.get('octave_range', 2)
+        self.instrument.start_key = start_key
+        self.instrument.octave_range = octave_range
+        self.instrument.pitch_range = (start_key, start_key + octave_range * 12)
 
         # Update smoothing
         smoothing = settings.get('smoothing', 0.1)
