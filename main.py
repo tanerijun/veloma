@@ -28,6 +28,10 @@ class VelomaApp:
             on_settings_change=self._update_settings
         )
 
+        self.last_hand_data = None
+        self.last_hand_time = 0
+        self.hand_hold_timeout = 0.5  # seconds to hold last hand data on dropout
+
     def _start_tracking(self) -> bool:
         """Start the hand tracking and audio synthesis."""
         print("Starting Veloma...")
@@ -91,32 +95,38 @@ class VelomaApp:
 
         while self.is_running:
             try:
-                # Get hand positions from camera
                 hand_data = self.hand_tracker.get_hand_positions()
+                now = time.time()
 
-                if hand_data is not None:
-                    # Update audio based on hand positions
-                    self.instrument.update_from_vision(hand_data)
+                if hand_data and hand_data.get('hands'):
+                    self.last_hand_data = hand_data
+                    self.last_hand_time = now
+                    use_hand_data = hand_data
+                else:
+                    # Use cached hand data only if within timeout
+                    if self.last_hand_data and (now - self.last_hand_time) < self.hand_hold_timeout:
+                        use_hand_data = self.last_hand_data
+                    else:
+                        use_hand_data = None
 
-                    # Update UI with camera frame
-                    frame = hand_data.get('frame')
+                if use_hand_data is not None:
+                    self.instrument.update_from_vision(use_hand_data)
+                    frame = use_hand_data.get('frame')
                     if frame is not None:
-                        frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, hand_data)
+                        frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, use_hand_data)
                         self.ui.update_camera_frame(frame_with_landmarks)
-
-                    # Update UI with audio parameters
                     self.ui.update_audio_params(
                         self.instrument.current_pitch,
                         self.instrument.current_volume
                     )
-
-                    # Update hands count
-                    hands_count = len(hand_data.get('hands', []))
+                    hands_count = len(use_hand_data.get('hands', []))
                     self.ui.update_hands_count(hands_count)
+                else:
+                    # No valid hand data for too long: force note off
+                    self.instrument.update_from_vision({'hands': []})
+                    self.ui.update_hands_count(0)
 
-                # Sleep briefly to prevent excessive CPU usage
-                time.sleep(0.01)  # 100 Hz update rate
-
+                time.sleep(0.01)
             except Exception as e:
                 print(f"Error in main loop: {e}")
                 time.sleep(0.1)

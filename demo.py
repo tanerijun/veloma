@@ -29,6 +29,10 @@ class VelomaDemo:
         self.is_running = False
         self.audio_enabled = True
 
+        self.last_hand_data = None
+        self.last_hand_time = 0
+        self.hand_hold_timeout = 0.5  # seconds to hold last hand data on dropout
+
     def run(self):
         print("Veloma Demo - Core Functionality Test")
         print("=" * 50)
@@ -60,30 +64,34 @@ class VelomaDemo:
 
         try:
             while self.is_running:
-                # Get hand data
                 hand_data = self.tracker.get_hand_positions()
+                now = time.time()
 
-                if hand_data:
-                    # Process audio if enabled
-                    if self.audio_enabled:
-                        self.instrument.update_from_vision(hand_data)
+                if hand_data and hand_data.get('hands'):
+                    self.last_hand_data = hand_data
+                    self.last_hand_time = now
+                    use_hand_data = hand_data
+                else:
+                    # Use cached hand data only if within timeout
+                    if self.last_hand_data and (now - self.last_hand_time) < self.hand_hold_timeout:
+                        use_hand_data = self.last_hand_data
                     else:
-                        # Fade out when audio disabled
+                        use_hand_data = None
+
+                if use_hand_data:
+                    if self.audio_enabled:
+                        self.instrument.update_from_vision(use_hand_data)
+                    else:
                         self.instrument.update_from_vision({'hands': []})
 
-
-                    # Display frame with landmarks
-                    frame = hand_data['frame']
-                    frame_with_landmarks = self.tracker.draw_landmarks(frame, hand_data)
-
-                    # Add status text
-                    self._add_status_text(frame_with_landmarks, hand_data)
-
-                    # Show frame
+                    frame = use_hand_data['frame']
+                    frame_with_landmarks = self.tracker.draw_landmarks(frame, use_hand_data)
+                    self._add_status_text(frame_with_landmarks, use_hand_data)
                     cv2.imshow('Veloma Demo - Press q to quit, SPACE to toggle audio', frame_with_landmarks)
-
-                    # Print hand info
-                    self._print_hand_info(hand_data)
+                    self._print_hand_info(use_hand_data)
+                else:
+                    # No valid hand data for too long: force note off
+                    self.instrument.update_from_vision({'hands': []})
 
                 # Handle keyboard input
                 key = cv2.waitKey(1) & 0xFF
