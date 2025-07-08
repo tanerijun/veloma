@@ -69,13 +69,11 @@ class VelomaInstrument:
         self.start_key = 60.0
         self.octave_range = 2
 
-        self.scale = list(SCALES[get_scale_names()[0]](self.start_key))
+        self.scale_name = "major"
+        self.pitch_pool = self._generate_pitch_pool(self.scale_name)
 
         self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12) # 12 semitones per octave
         self.volume_range = (0.0, 1.0)
-
-        # Create pitch pool based on scale
-        self.pitch_pool = [pitch for pitch in self.scale if pitch <= self.start_key + self.octave_range * 12.0]
 
         self.gesture_list= {
             "arpeggio":[0,2,4,2,0],
@@ -195,9 +193,7 @@ class VelomaInstrument:
             else:
                 mapped_index_float = self._map_range(palm_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
                 mapped_index = int(round(mapped_index_float))
-                self.target_pitch=self.scale[mapped_index]
-                # print("Mapped index:", mapped_index, "Mapped pitch:", self.scale[mapped_index])
-
+                self.target_pitch=self.pitch_pool[mapped_index]
 
             # volume_y_clamped = max(0.5, min(1.0, palm_y))
             self.target_volume = self._map_range(
@@ -225,7 +221,7 @@ class VelomaInstrument:
                 else:
                     mapped_index_float = self._map_range(pitch_x, 0.5, 1.0, 0, len(self.pitch_pool) - 1 )
                     mapped_index = int(round(mapped_index_float))
-                    self.target_pitch=self.scale[mapped_index]
+                    self.target_pitch=self.pitch_pool[mapped_index]
 
                 # 音量：左手
                 volume_y = left_hand["palm_center"][1]
@@ -305,8 +301,8 @@ class VelomaInstrument:
 
     def set_scale(self, scale_name: str):
         if scale_name in SCALES:
-            self.scale = list(SCALES[scale_name](self.start_key))
-            self.pitch_pool = [pitch for pitch in self.scale if pitch <= self.start_key + self.octave_range * 12.0]
+            self.scale_name = scale_name
+            self.pitch_pool = self._generate_pitch_pool(scale_name)
 
     def play_gesture(self, gesture_name: str = "arpeggio"):
         for i in range(len(self.gesture_list['arpeggio'])):
@@ -314,6 +310,15 @@ class VelomaInstrument:
             sc.wait(1)
 
         self.theremin.end_all_notes()
+
+    def _generate_pitch_pool(self, scale_name: str) -> list:
+        if scale_name == "chromatic":
+            # All semitones in the range
+            return [self.start_key + i for i in range(self.octave_range * 12 + 1)]
+        else:
+            # Use the scale generator
+            return [pitch for pitch in SCALES[scale_name](self.start_key)
+                    if pitch <= self.start_key + self.octave_range * 12.0]
 
     @staticmethod
     def _map_range(
