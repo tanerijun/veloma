@@ -69,11 +69,6 @@ class VelomaApp:
         self.instrument.octave_range = octave_range
         self.instrument.pitch_range = (start_key, start_key + octave_range * 12)
 
-        # Update smoothing
-        # smoothing = settings.get('smoothing', 0.1)
-        # self.instrument.pitch_smoothing = smoothing
-        # self.instrument.volume_smoothing = smoothing
-
         # Update scale
         scale_name = settings.get("scale", get_scale_names()[0])
         self.instrument.set_scale(scale_name)

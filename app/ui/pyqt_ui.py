@@ -175,16 +175,6 @@ class VelomaUI(QMainWindow):
         settings_layout.addWidget(self.octave_range_slider, 1, 1)
         settings_layout.addWidget(self.octave_range_value_label, 1, 2)
 
-        # Smoothing setting
-        # settings_layout.addWidget(QLabel("Smoothing:"), 2, 0)
-        # self.smoothing_slider = QSlider(Qt.Orientation.Horizontal)
-        # self.smoothing_slider.setRange(50, 100)
-        # self.smoothing_slider.setValue(100)
-        # self.smoothing_slider.valueChanged.connect(self._on_settings_changed)
-        # self.smoothing_value_label = QLabel("1.00")
-        # settings_layout.addWidget(self.smoothing_slider, 2, 1)
-        # settings_layout.addWidget(self.smoothing_value_label, 2, 2)
-
         self.instrument_combo = QComboBox()
         self.instrument_combo.addItems(INSTRUMENTS)
         self.instrument_combo.setCurrentText(INSTRUMENTS[0])
@@ -310,8 +300,6 @@ class VelomaUI(QMainWindow):
     def _on_settings_changed(self):
         """Handle settings slider changes."""
         # Update slider value labels
-        # if self.smoothing_value_label and self.smoothing_slider:
-        #     self.smoothing_value_label.setText(f"{self.smoothing_slider.value() / 100:.2f}")
         if self.start_key_value_label and self.start_key_slider:
             self.start_key_value_label.setText(f"{self.start_key_slider.value()}")
         if self.octave_range_value_label and self.octave_range_slider:
@@ -327,7 +315,6 @@ class VelomaUI(QMainWindow):
             settings = {
                 "start_key": int(self.start_key_slider.value()),
                 "octave_range": int(self.octave_range_slider.value()),
-                # 'smoothing': self.smoothing_slider.value() / 100.0,
                 "instrument": self.instrument_combo.currentText(),
                 "scale": self.scale_combo.currentText(),
                 "glide_mode": self.glide_checkbox.isChecked(),
