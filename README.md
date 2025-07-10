@@ -35,3 +35,7 @@ If using `uv`:
 
 1. Install dependencies by running `uv sync`.
 2. Run app by executing `uv run main.py`.
+
+## Demo
+
+![Demo](screenshots/app_demo.png)
