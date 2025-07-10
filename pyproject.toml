@@ -1,6 +1,6 @@
 [project]
 name = "veloma"
-version = "0.1.0"
+version = "1.0.0"
 description = "Veloma is a digital instrument inspired by Theremin and designed to create sound through movement. It uses a camera to track the position of your hands, allowing you to control pitch, volume, and other parameters in real-time."
 readme = "README.md"
 requires-python = ">=3.11"

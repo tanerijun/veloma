@@ -25,3 +25,13 @@ Veloma uses webcam to track hand movements and translates them into musical expr
 - **Gesture Recognition**: Uses Mediapipe for real-time hand tracking.
 - **Audio Synthesis**: Utilizes SCAMP for generating sound based on hand movements.
 - **Customizable**: Modify parameters like starting note, octave range, scale, instrument
+
+## Development
+
+1. Install dependencies in `pyproject.toml`.
+2. Run `main.py`
+
+If using `uv`:
+
+1. Install dependencies by running `uv sync`.
+2. Run app by executing `uv run main.py`.
