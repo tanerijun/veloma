@@ -150,10 +150,22 @@ class VelomaUI(QMainWindow):
 
         # Help icon button
         help_btn = QPushButton("❔")
-        help_btn.setFixedSize(32, 32)
         help_btn.setToolTip("Show Instructions")
-        help_btn.clicked.connect(self._show_help_modal)
         help_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        help_btn.setFixedSize(32, 32)
+        help_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                padding: 0;
+                margin: 0;
+                font-size: 20px;
+            }
+            QPushButton:hover {
+                color: #FF9800;
+            }
+        """)
+        help_btn.clicked.connect(self._show_help_modal)
         toolbar.addWidget(help_btn)
 
         # Exit button
