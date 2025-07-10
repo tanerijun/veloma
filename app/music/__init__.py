@@ -1,12 +1,13 @@
+import os
 import threading
 import time
 from typing import Any, Dict, Optional
-import os
+
 import scamp as sc
 from scamp_extensions.pitch import Scale
 
 SCALES = {
-    "major": Scale.major, # first scale == default scale
+    "major": Scale.major,  # first scale == default scale
     "aeolian": Scale.aeolian,
     "blues": Scale.blues,
     "chromatic": Scale.chromatic,
@@ -27,31 +28,47 @@ SCALES = {
 }
 
 DEFAULT_GLIDE_MODE = False
-PITCH_X_MARGIN = 0.01 # 1% margin on the right
+PITCH_X_MARGIN = 0.01  # 1% margin on the right
+
+INSTRUMENTS = [
+    "Marimba",
+    "Vibraphone",
+    "Xylophone",
+    "Glockenspiel",
+    "Dulcimer",
+    "Steel Drum",
+    "Timpani Half",
+    "Harp LP2",
+    "Kalimba",
+]
+
+GLIDE_MODE_INSTRUMENT = "Sine Wave"
+
 
 def get_scale_names():
     return list(SCALES.keys())
 
+
 # Paths to sound fonts
 current_dir = os.path.dirname(os.path.abspath(__file__))
-soundFontPath_theremin_high = os.path.join(current_dir, "soundFonts", "theremin_high.sf2")
-soundFontPath_theremin_trill = os.path.join(current_dir, "soundFonts", "theremin_trill.sf2")
+soundFontPath_theremin_high = os.path.join(
+    current_dir, "soundFonts", "theremin_high.sf2"
+)
+soundFontPath_theremin_trill = os.path.join(
+    current_dir, "soundFonts", "theremin_trill.sf2"
+)
 soundFontPath_7777777 = os.path.join(current_dir, "soundFonts", "7777777.sf2")
+
 
 class VelomaInstrument:
     """Virtual Theremin-like instrument using SCAMP with real-time parameter control."""
 
     def __init__(self):
         self.session = sc.Session()
-        self.session = sc.Session(default_soundfont=soundFontPath_7777777)
-        # self.session = sc.Session(default_soundfont=soundFontPath_theremin_high)
-        # self.session = sc.Session(default_soundfont="theremin_high.sf2")
-        # self.session = sc.Session(default_soundfont=soundFontPath_theremin_trill)
-
         self.session.tempo = 120
 
         # self.theremin = self.session.new_part("Sine Wave")
-        self.theremin = self.session.new_part("piano")
+        self.theremin = self.session.new_part(INSTRUMENTS[0])
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
         # Audio parameters
@@ -60,19 +77,22 @@ class VelomaInstrument:
         self.target_pitch = 60.0
         self.target_volume = 0.5
 
-        self.current_notes = [] # hold all active notes
-        self.num_amplified_notes = 3 # number of notes playing at the same time
+        self.current_notes = []  # hold all active notes
+        self.num_amplified_notes = 3  # number of notes playing at the same time
         self.is_note_playing = False
 
         # Hand position mapping ranges
-        self.glide_mode=DEFAULT_GLIDE_MODE
+        self.glide_mode = DEFAULT_GLIDE_MODE
         self.start_key = 60.0
         self.octave_range = 1
 
         self.scale_name = "major"
         self.pitch_pool = self._generate_pitch_pool(self.scale_name)
 
-        self.pitch_range = (self.start_key, self.start_key + self.octave_range * 12) # 12 semitones per octave
+        self.pitch_range = (
+            self.start_key,
+            self.start_key + self.octave_range * 12,
+        )  # 12 semitones per octave
         self.volume_range = (0.0, 1.0)
 
         # Smoothing parameters - much higher for real-time response
@@ -144,13 +164,15 @@ class VelomaInstrument:
                 )
             else:
                 # Discrete mapping: equal-width blocks for each note
-                x = max(region_start, min(region_end, palm_x)) # clamp palm_x to region
+                x = max(region_start, min(region_end, palm_x))  # clamp palm_x to region
                 mapped_index = int((x - region_start) / block_width)
                 mapped_index = min(mapped_index, num_notes - 1)
 
                 self.target_pitch = self.pitch_pool[mapped_index]
 
-            self.target_volume = self._map_range(1.0 - palm_y, 0.0, 0.5, *self.volume_range)
+            self.target_volume = self._map_range(
+                1.0 - palm_y, 0.0, 0.5, *self.volume_range
+            )
 
             if len(hands) >= 2:
                 # Assign right/left hands
@@ -167,7 +189,9 @@ class VelomaInstrument:
                 self.last_pitch_x = pitch_x
 
                 if self.glide_mode:
-                    self.target_pitch = self._map_range(pitch_x, region_start, region_end, *self.pitch_range)
+                    self.target_pitch = self._map_range(
+                        pitch_x, region_start, region_end, *self.pitch_range
+                    )
                 else:
                     # Discrete mapping for two hands
                     x = max(region_start, min(region_end, pitch_x))
@@ -175,7 +199,9 @@ class VelomaInstrument:
                     mapped_index = min(mapped_index, num_notes - 1)
                     self.target_pitch = self.pitch_pool[mapped_index]
 
-                self.target_volume = self._map_range(1.0 - volume_y, 0.0, 0.5, *self.volume_range)
+                self.target_volume = self._map_range(
+                    1.0 - volume_y, 0.0, 0.5, *self.volume_range
+                )
 
     def _audio_loop(self):
         """Main audio processing loop with real-time parameter updates."""
@@ -225,10 +251,15 @@ class VelomaInstrument:
                         now = time.time()
                         if (
                             note_index is not None
-                            and (self.last_note_index is None or note_index != self.last_note_index)
+                            and (
+                                self.last_note_index is None
+                                or note_index != self.last_note_index
+                            )
                             and now - self.last_note_time > self.note_play_cooldown
                         ):
-                            self.theremin.play_note(self.pitch_pool[note_index], self.current_volume, 0.4)
+                            self.theremin.play_note(
+                                self.pitch_pool[note_index], self.current_volume, 0.4
+                            )
                             self.last_note_time = now
                             self.last_note_index = note_index
                 else:
@@ -287,13 +318,23 @@ class VelomaInstrument:
             return [self.start_key + i for i in range(self.octave_range * 12 + 1)]
         else:
             # Use the scale generator
-            return [pitch for pitch in SCALES[scale_name](self.start_key)
-                    if pitch <= self.start_key + self.octave_range * 12.0]
+            return [
+                pitch
+                for pitch in SCALES[scale_name](self.start_key)
+                if pitch <= self.start_key + self.octave_range * 12.0
+            ]
 
     def set_instrument(self, instrument_name: str):
         self._stop_current_note()
         self.theremin.remove_soundfont_playback()
-        self.theremin = self.session.new_part(instrument_name)
+
+        if instrument_name == GLIDE_MODE_INSTRUMENT:
+            self.theremin = self.session.new_part(
+                instrument_name, soundfont=soundFontPath_7777777
+            )
+        else:
+            self.theremin = self.session.new_part(instrument_name)
+
         self.theremin.send_midi_cc(64, 0)
         self.is_note_playing = False
         self.current_notes = []

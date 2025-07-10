@@ -1,13 +1,26 @@
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QSizePolicy, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QSlider, QGroupBox, QGridLayout, QComboBox, QCheckBox
-)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QPixmap, QImage, QCloseEvent, QCursor
+from typing import Callable, Optional
+
 import cv2
 import numpy as np
-from typing import Optional, Callable
-from app.music import DEFAULT_GLIDE_MODE, get_scale_names
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QCloseEvent, QCursor, QImage, QPixmap
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QSizePolicy,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
+
+from app.music import DEFAULT_GLIDE_MODE, INSTRUMENTS, get_scale_names
 
 
 class VelomaUI(QMainWindow):
@@ -48,7 +61,7 @@ class VelomaUI(QMainWindow):
 
     def setup(self):
         """Setup the main window and UI components."""
-        self.setWindowTitle('Veloma - Virtual Theremin')
+        self.setWindowTitle("Veloma - Virtual Theremin")
         self.setGeometry(100, 100, self.window_width, self.window_height)
         self.setMinimumSize(1200, 800)
 
@@ -80,8 +93,12 @@ class VelomaUI(QMainWindow):
         # Camera display - make it larger
         self.camera_label = QLabel()
         self.camera_label.setMinimumSize(self.camera_width, self.camera_height)
-        self.camera_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.camera_label.setStyleSheet("border: 2px solid #ccc; background-color: #000;")
+        self.camera_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.camera_label.setStyleSheet(
+            "border: 2px solid #ccc; background-color: #000;"
+        )
         self.camera_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         camera_layout.addWidget(self.camera_label)
 
@@ -168,25 +185,32 @@ class VelomaUI(QMainWindow):
         # settings_layout.addWidget(self.smoothing_slider, 2, 1)
         # settings_layout.addWidget(self.smoothing_value_label, 2, 2)
 
+        self.instrument_combo = QComboBox()
+        self.instrument_combo.addItems(INSTRUMENTS)
+        self.instrument_combo.setCurrentText(INSTRUMENTS[0])
+        self.instrument_combo.currentTextChanged.connect(self._on_settings_changed)
+        settings_layout.addWidget(QLabel("Instrument:"), 3, 0)
+        settings_layout.addWidget(self.instrument_combo, 3, 1, 1, 2)
+
         # Scales selection
         self.scale_combo = QComboBox()
         self.scale_combo.addItems(get_scale_names())
         self.scale_combo.setCurrentText(get_scale_names()[0])
         self.scale_combo.currentTextChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(QLabel("Scale:"), 3, 0)
-        settings_layout.addWidget(self.scale_combo, 3, 1, 1, 2)
+        settings_layout.addWidget(QLabel("Scale:"), 4, 0)
+        settings_layout.addWidget(self.scale_combo, 4, 1, 1, 2)
 
         # Glide mode checkbox
         self.glide_checkbox = QCheckBox("Advanced Mode")
         self.glide_checkbox.setChecked(DEFAULT_GLIDE_MODE)
         self.glide_checkbox.stateChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(self.glide_checkbox, 4, 0, 1, 3)
+        settings_layout.addWidget(self.glide_checkbox, 5, 0, 1, 3)
 
         # Show guidelines
         self.show_boundaries_checkbox = QCheckBox("Show Guide")
         self.show_boundaries_checkbox.setChecked(True)
         self.show_boundaries_checkbox.stateChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(self.show_boundaries_checkbox, 5, 0, 1, 3)
+        settings_layout.addWidget(self.show_boundaries_checkbox, 6, 0, 1, 3)
 
         audio_layout.addWidget(settings_group)
 
@@ -238,12 +262,19 @@ class VelomaUI(QMainWindow):
         try:
             height, width, channel = image.shape
             bytes_per_line = 3 * width
-            q_image = QImage(image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+            q_image = QImage(
+                image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888
+            )
             pixmap = QPixmap.fromImage(q_image)
             if self.camera_label:
                 label_width = self.camera_label.width()
                 label_height = self.camera_label.height()
-                scaled_pixmap = pixmap.scaled(label_width, label_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                scaled_pixmap = pixmap.scaled(
+                    label_width,
+                    label_height,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
                 self.camera_label.setPixmap(scaled_pixmap)
         except Exception as e:
             print(f"Error displaying image: {e}")
@@ -251,7 +282,9 @@ class VelomaUI(QMainWindow):
 
     def _show_error_pattern(self):
         """Show error pattern when image display fails."""
-        error_image = np.zeros((self.camera_height, self.camera_width, 3), dtype=np.uint8)
+        error_image = np.zeros(
+            (self.camera_height, self.camera_width, 3), dtype=np.uint8
+        )
         error_image[:, :] = [255, 0, 0]  # Red background
 
         # Add error stripes
@@ -284,17 +317,27 @@ class VelomaUI(QMainWindow):
         if self.octave_range_value_label and self.octave_range_slider:
             self.octave_range_value_label.setText(f"{self.octave_range_slider.value()}")
 
-        if self.on_settings_change_callback and self.start_key_slider and self.octave_range_slider and self.scale_combo and self.glide_checkbox:
+        if (
+            self.on_settings_change_callback
+            and self.start_key_slider
+            and self.octave_range_slider
+            and self.scale_combo
+            and self.glide_checkbox
+        ):
             settings = {
-                'start_key': int(self.start_key_slider.value()),
-                'octave_range': int(self.octave_range_slider.value()),
+                "start_key": int(self.start_key_slider.value()),
+                "octave_range": int(self.octave_range_slider.value()),
                 # 'smoothing': self.smoothing_slider.value() / 100.0,
-                'scale': self.scale_combo.currentText(),
-                'glide_mode': self.glide_checkbox.isChecked(),
-                'show_note_boundaries': self.show_boundaries_checkbox.isChecked()
+                "instrument": self.instrument_combo.currentText(),
+                "scale": self.scale_combo.currentText(),
+                "glide_mode": self.glide_checkbox.isChecked(),
+                "show_note_boundaries": self.show_boundaries_checkbox.isChecked(),
             }
-            print("OK")
             self.on_settings_change_callback(settings)
+
+        self.octave_range_slider.setEnabled(not self.glide_checkbox.isChecked())
+        self.scale_combo.setEnabled(not self.glide_checkbox.isChecked())
+        self.instrument_combo.setEnabled(not self.glide_checkbox.isChecked())
 
     def update_camera_frame(self, frame: Optional[np.ndarray]):
         """Update the camera preview with new frame."""
@@ -324,10 +367,12 @@ class VelomaUI(QMainWindow):
         if self.volume_value_label:
             self.volume_value_label.setText(f"{volume:.3f}")
 
-    def set_callbacks(self,
-                     on_start: Optional[Callable] = None,
-                     on_stop: Optional[Callable] = None,
-                     on_settings_change: Optional[Callable] = None):
+    def set_callbacks(
+        self,
+        on_start: Optional[Callable] = None,
+        on_stop: Optional[Callable] = None,
+        on_settings_change: Optional[Callable] = None,
+    ):
         """Set callback functions for UI events."""
         self.on_start_callback = on_start
         self.on_stop_callback = on_stop
