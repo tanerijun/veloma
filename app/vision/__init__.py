@@ -13,6 +13,30 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
+HAND_CONNECTIONS = [
+    (0, 1),
+    (1, 2),
+    (2, 3),
+    (3, 4),  # Thumb
+    (0, 5),
+    (5, 6),
+    (6, 7),
+    (7, 8),  # Index
+    (0, 9),
+    (9, 10),
+    (10, 11),
+    (11, 12),  # Middle
+    (0, 13),
+    (13, 14),
+    (14, 15),
+    (15, 16),  # Ring
+    (0, 17),
+    (17, 18),
+    (18, 19),
+    (19, 20),  # Pinky
+]
+FINGER_TIPS = [4, 8, 12, 16, 20]
+
 
 class HandTracker:
     def __init__(self, model_path="app/vision/hand_landmarker.task"):
@@ -115,18 +139,43 @@ class HandTracker:
     def draw_landmarks(self, frame, hand_data: Dict[str, Any]) -> np.ndarray:
         if not hand_data or not hand_data["hands"]:
             return frame
+
+        h, w, _ = frame.shape
+        overlay = frame.copy()
+
         for hand_info in hand_data["hands"]:
-            h, w, _ = frame.shape
             landmarks = hand_info["landmarks"]
-            for landmark in landmarks:
+
+            # Draw connections on overlay
+            for start_idx, end_idx in HAND_CONNECTIONS:
+                x1 = int(landmarks[start_idx]["x"] * w)
+                y1 = int(landmarks[start_idx]["y"] * h)
+                x2 = int(landmarks[end_idx]["x"] * w)
+                y2 = int(landmarks[end_idx]["y"] * h)
+                cv2.line(overlay, (x1, y1), (x2, y2), (0, 255, 255), 2, cv2.LINE_AA)
+
+            # Draw landmarks
+            for idx, landmark in enumerate(landmarks):
                 x = int(landmark["x"] * w)
                 y = int(landmark["y"] * h)
-                color = (0, 255, 0)
-                cv2.circle(frame, (x, y), 4, color, -1)
+                if idx in FINGER_TIPS:
+                    color = (0, 128, 255)  # Orange for fingertips
+                    radius = 7
+                else:
+                    color = (0, 255, 0)  # Green for joints
+                    radius = 5
+                cv2.circle(overlay, (x, y), radius, color, -1, cv2.LINE_AA)
+
+            # Draw palm center
             palm_x, palm_y = hand_info["palm_center"]
             palm_pixel_x = int(palm_x * w)
             palm_pixel_y = int(palm_y * h)
-            cv2.circle(frame, (palm_pixel_x, palm_pixel_y), 10, (255, 0, 0), -1)
+            cv2.circle(
+                overlay, (palm_pixel_x, palm_pixel_y), 10, (255, 0, 0), -1, cv2.LINE_AA
+            )
+
+        # Blend overlay for transparency
+        cv2.addWeighted(overlay, 0.4, frame, 0.6, 0, frame)
         return frame
 
     def draw_note_boundaries(
