@@ -127,7 +127,7 @@ class VelomaUI(QMainWindow):
         )
 
         # Glide mode
-        self.glide_checkbox = QCheckBox("Advanced Mode")
+        self.glide_checkbox = QCheckBox("Theremin Mode")
         self.glide_checkbox.setChecked(DEFAULT_GLIDE_MODE)
         self.glide_checkbox.stateChanged.connect(self._on_settings_changed)
         toolbar.addWidget(self.glide_checkbox)
