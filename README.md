@@ -1,13 +1,27 @@
 # Veloma - Virtual Theremin
 
-Velocity, Volume, and Motion
-
-A gesture-controlled musical instrument inspired by the Theremin, built with computer vision and SCAMP for audio synthesis.
+A gesture-controlled musical instrument inspired by the Theremin, built with PyQT (UI), Mediapipe & OpenCV (Computer Vision), and SCAMP (Audio).
 
 ## Overview
 
-Veloma uses your webcam to track hand movements and translates them into musical expression:
+Veloma uses webcam to track hand movements and translates them into musical expression:
 
-- **Hand position (Y-axis)**: Controls pitch - move your hand up for higher notes, down for lower notes
-- **Hand position (X-axis)**: Controls volume - move your hand left/right to adjust volume
-- **Two hands**: Advanced control with one hand for pitch and distance between hands for volume
+### Modes:
+
+- Default mode: Discrete notes playing based on hand position.
+- Theremin mode: Continuous pitch and volume control using hand movements.
+
+### Controls:
+
+- **Single Hand Mode**: Use one hand to control pitch and volume.
+  - Vectical movement of the hand controls volume.
+  - Horizontal movement of the hand controls pitch.
+- **Two Hand Mode**: Use both hands for advanced control over pitch and volume.
+  - **Right Hand**: Controls pitch - move right hand left/right to change pitch.
+  - **Left Hand**: Controls volume - move left hand up/down to adjust volume.
+
+### Features:
+
+- **Gesture Recognition**: Uses Mediapipe for real-time hand tracking.
+- **Audio Synthesis**: Utilizes SCAMP for generating sound based on hand movements.
+- **Customizable**: Modify parameters like starting note, octave range, scale, instrument
