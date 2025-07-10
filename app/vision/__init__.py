@@ -1,12 +1,18 @@
-import cv2
-import numpy as np
 import threading
 import time
-from typing import Tuple, Dict, Any
+from typing import Any, Dict, Tuple
 
-from mediapipe.tasks.python.vision import HandLandmarker, HandLandmarkerOptions, RunningMode
+import cv2
+import numpy as np
+from mediapipe import Image as MPImage
+from mediapipe import ImageFormat as MPImageFormat
 from mediapipe.tasks.python.core.base_options import BaseOptions
-from mediapipe import Image as MPImage, ImageFormat as MPImageFormat
+from mediapipe.tasks.python.vision import (
+    HandLandmarker,
+    HandLandmarkerOptions,
+    RunningMode,
+)
+
 
 class HandTracker:
     def __init__(self, model_path="app/vision/hand_landmarker.task"):
@@ -19,7 +25,8 @@ class HandTracker:
         options = HandLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=model_path),
             running_mode=RunningMode.LIVE_STREAM,
-            result_callback=self._result_callback
+            result_callback=self._result_callback,
+            num_hands=2,
         )
         self.hand_landmarker = HandLandmarker.create_from_options(options)
 
@@ -76,58 +83,55 @@ class HandTracker:
             time.sleep(0.01)
 
     def _result_callback(self, result, output_image, timestamp_ms):
-        # Called from MediaPipe thread
-        # Prepare hand_data dict similar to your old API
         hand_data = {
-            'frame': getattr(self, '_latest_frame', None),
-            'hands': [],
-            'timestamp': timestamp_ms
+            "frame": getattr(self, "_latest_frame", None),
+            "hands": [],
+            "timestamp": timestamp_ms,
         }
         if result and result.hand_landmarks:
             for idx, landmarks in enumerate(result.hand_landmarks):
                 landmark_list = []
                 for landmark in landmarks:
-                    landmark_list.append({
-                        'x': landmark.x,
-                        'y': landmark.y,
-                        'z': landmark.z
-                    })
+                    landmark_list.append(
+                        {"x": landmark.x, "y": landmark.y, "z": landmark.z}
+                    )
                 palm_center = self._calculate_palm_center(landmark_list)
                 hand_info = {
-                    'landmarks': landmark_list,
-                    'palm_center': palm_center,
-                    'hand_index': idx
+                    "landmarks": landmark_list,
+                    "palm_center": palm_center,
+                    "hand_index": idx,
                 }
-                hand_data['hands'].append(hand_info)
+                hand_data["hands"].append(hand_info)
         if self._on_hand_data:
             self._on_hand_data(hand_data)
 
     def _calculate_palm_center(self, landmarks) -> Tuple[float, float]:
         wrist = landmarks[0]
         middle_mcp = landmarks[9]
-        center_x = (wrist['x'] + middle_mcp['x']) / 2
-        center_y = (wrist['y'] + middle_mcp['y']) / 2
+        center_x = (wrist["x"] + middle_mcp["x"]) / 2
+        center_y = (wrist["y"] + middle_mcp["y"]) / 2
         return (center_x, center_y)
 
     def draw_landmarks(self, frame, hand_data: Dict[str, Any]) -> np.ndarray:
-        # You can keep your existing implementation here
-        if not hand_data or not hand_data['hands']:
+        if not hand_data or not hand_data["hands"]:
             return frame
-        for hand_info in hand_data['hands']:
+        for hand_info in hand_data["hands"]:
             h, w, _ = frame.shape
-            landmarks = hand_info['landmarks']
+            landmarks = hand_info["landmarks"]
             for landmark in landmarks:
-                x = int(landmark['x'] * w)
-                y = int(landmark['y'] * h)
+                x = int(landmark["x"] * w)
+                y = int(landmark["y"] * h)
                 color = (0, 255, 0)
                 cv2.circle(frame, (x, y), 4, color, -1)
-            palm_x, palm_y = hand_info['palm_center']
+            palm_x, palm_y = hand_info["palm_center"]
             palm_pixel_x = int(palm_x * w)
             palm_pixel_y = int(palm_y * h)
             cv2.circle(frame, (palm_pixel_x, palm_pixel_y), 10, (255, 0, 0), -1)
         return frame
 
-    def draw_note_boundaries(self, frame, num_notes, region_start=0.5, region_end=0.9, color=(255, 255, 255)):
+    def draw_note_boundaries(
+        self, frame, num_notes, region_start=0.5, region_end=0.9, color=(255, 255, 255)
+    ):
         h, w, _ = frame.shape
         region_width = region_end - region_start
         block_width = region_width / num_notes
