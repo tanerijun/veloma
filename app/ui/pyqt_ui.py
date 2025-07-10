@@ -8,14 +8,13 @@ from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
-    QGridLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QPushButton,
     QSizePolicy,
     QSlider,
+    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
@@ -69,28 +68,117 @@ class VelomaUI(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
-        self._create_main_content(main_layout)
+        self._create_toolbar(main_layout)
+        self._create_camera_panel(main_layout)
+        main_layout.setStretch(1, 1)  # camera preview takes remaining space
 
-    def _create_main_content(self, parent_layout):
-        """Create the main content area."""
-        content_layout = QHBoxLayout()
+    def _create_toolbar(self, parent_layout):
+        """Create a horizontal toolbar with controls and help."""
+        toolbar = QHBoxLayout()
 
-        # Left panel - Camera preview
-        self._create_camera_panel(content_layout)
+        # Start Key
+        toolbar.addWidget(QLabel("Start Key:"))
+        self.start_key_slider = QSlider(Qt.Orientation.Horizontal)
+        self.start_key_slider.setRange(20, 80)
+        self.start_key_slider.setValue(60)
+        self.start_key_slider.setFixedWidth(120)
+        self.start_key_slider.valueChanged.connect(self._on_settings_changed)
+        self.start_key_value_label = QLabel("60")
+        toolbar.addWidget(self.start_key_slider)
+        toolbar.addWidget(self.start_key_value_label)
+        toolbar.addItem(
+            QSpacerItem(20, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        )
 
-        # Right panel - Audio controls
-        self._create_audio_panel(content_layout)
+        # Octave Range
+        toolbar.addWidget(QLabel("Octave Range:"))
+        self.octave_range_slider = QSlider(Qt.Orientation.Horizontal)
+        self.octave_range_slider.setRange(1, 5)
+        self.octave_range_slider.setValue(1)
+        self.octave_range_slider.setFixedWidth(80)
+        self.octave_range_slider.valueChanged.connect(self._on_settings_changed)
+        self.octave_range_value_label = QLabel("1")
+        toolbar.addWidget(self.octave_range_slider)
+        toolbar.addWidget(self.octave_range_value_label)
+        toolbar.addItem(
+            QSpacerItem(20, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        )
 
-        parent_layout.addLayout(content_layout)
-        content_layout.setStretch(0, 1)
-        content_layout.setStretch(1, 0)
+        # Instrument
+        toolbar.addWidget(QLabel("Instrument:"))
+        self.instrument_combo = QComboBox()
+        self.instrument_combo.addItems(INSTRUMENTS)
+        self.instrument_combo.setCurrentText(INSTRUMENTS[0])
+        self.instrument_combo.currentTextChanged.connect(self._on_settings_changed)
+        toolbar.addWidget(self.instrument_combo)
+        toolbar.addItem(
+            QSpacerItem(10, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        )
+
+        # Scale
+        toolbar.addWidget(QLabel("Scale:"))
+        self.scale_combo = QComboBox()
+        self.scale_combo.addItems(get_scale_names())
+        self.scale_combo.setCurrentText(get_scale_names()[0])
+        self.scale_combo.currentTextChanged.connect(self._on_settings_changed)
+        toolbar.addWidget(self.scale_combo)
+        toolbar.addItem(
+            QSpacerItem(10, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        )
+
+        # Glide mode
+        self.glide_checkbox = QCheckBox("Advanced Mode")
+        self.glide_checkbox.setChecked(DEFAULT_GLIDE_MODE)
+        self.glide_checkbox.stateChanged.connect(self._on_settings_changed)
+        toolbar.addWidget(self.glide_checkbox)
+        toolbar.addItem(
+            QSpacerItem(10, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        )
+
+        # Show guidelines
+        self.show_boundaries_checkbox = QCheckBox("Show Guide")
+        self.show_boundaries_checkbox.setChecked(True)
+        self.show_boundaries_checkbox.stateChanged.connect(self._on_settings_changed)
+        toolbar.addWidget(self.show_boundaries_checkbox)
+        toolbar.addItem(
+            QSpacerItem(10, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        )
+
+        # Spacer
+        toolbar.addStretch()
+
+        # Help icon button
+        help_btn = QPushButton("❔")
+        help_btn.setFixedSize(32, 32)
+        help_btn.setToolTip("Show Instructions")
+        help_btn.clicked.connect(self._show_help_modal)
+        help_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        toolbar.addWidget(help_btn)
+
+        # Exit button
+        exit_button = QPushButton("Exit")
+        exit_button.setFixedSize(80, 32)
+        exit_button.clicked.connect(self._on_exit_clicked)
+        exit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FF9800;
+                color: white;
+                font-weight: bold;
+                border-radius: 12px;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #ffa733;
+            }
+        """)
+        exit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        toolbar.addWidget(exit_button)
+
+        parent_layout.addLayout(toolbar)
 
     def _create_camera_panel(self, parent_layout):
-        """Create camera preview panel."""
-        camera_group = QGroupBox("Camera Preview")
-        camera_layout = QVBoxLayout(camera_group)
-
-        # Camera display - make it larger
+        """Create camera preview panel (fills below toolbar)."""
+        camera_layout = QVBoxLayout()
         self.camera_label = QLabel()
         self.camera_label.setMinimumSize(self.camera_width, self.camera_height)
         self.camera_label.setSizePolicy(
@@ -102,150 +190,47 @@ class VelomaUI(QMainWindow):
         self.camera_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         camera_layout.addWidget(self.camera_label)
 
-        camera_layout.addStretch()
-        parent_layout.addWidget(camera_group)
-
-    def _create_audio_panel(self, parent_layout):
-        """Create audio control panel."""
-        audio_group = QGroupBox("Audio Control")
-        audio_group.setFixedWidth(350)
-        audio_layout = QVBoxLayout(audio_group)
-
-        # Current parameters section
-        params_group = QGroupBox("Current Parameters")
-        params_layout = QGridLayout(params_group)
-
-        # Pitch display
-        params_layout.addWidget(QLabel("Pitch (MIDI):"), 0, 0)
-        self.pitch_slider = QSlider(Qt.Orientation.Horizontal)
-        self.pitch_slider.setRange(40, 80)
-        self.pitch_slider.setValue(60)
-        self.pitch_slider.setEnabled(False)
+        # pitch/volume display at the bottom
+        info_layout = QHBoxLayout()
+        info_layout.addStretch()
+        info_layout.addWidget(QLabel("Pitch:"))
         self.pitch_value_label = QLabel("60.0")
-        params_layout.addWidget(self.pitch_slider, 0, 1)
-        params_layout.addWidget(self.pitch_value_label, 0, 2)
-
-        # Volume display
-        params_layout.addWidget(QLabel("Volume:"), 1, 0)
-        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
-        self.volume_slider.setRange(0, 100)
-        self.volume_slider.setValue(0)
-        self.volume_slider.setEnabled(False)
+        info_layout.addWidget(self.pitch_value_label)
+        info_layout.addSpacing(20)
+        info_layout.addWidget(QLabel("Volume:"))
         self.volume_value_label = QLabel("0.0")
-        params_layout.addWidget(self.volume_slider, 1, 1)
-        params_layout.addWidget(self.volume_value_label, 1, 2)
+        info_layout.addWidget(self.volume_value_label)
+        info_layout.addStretch()
+        camera_layout.addLayout(info_layout)
 
-        slider_style = """
-        QSlider::handle:disabled {
-            background: #ff9800;
-            border: 1px solid #ffa733;
-            width: 10px;
-            height: 10px;
-            margin: -5px 0;
-            border-radius: 12px;
-        }
-        """
+        camera_layout.addStretch()
+        parent_layout.addLayout(camera_layout)
 
-        self.pitch_slider.setStyleSheet(slider_style)
-        self.volume_slider.setStyleSheet(slider_style)
+    def _show_help_modal(self):
+        from PyQt6.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout
 
-        audio_layout.addWidget(params_group)
-
-        # Settings section
-        settings_group = QGroupBox("Settings")
-        settings_layout = QGridLayout(settings_group)
-
-        # Start Key setting
-        settings_layout.addWidget(QLabel("Start Key (MIDI):"), 0, 0)
-        self.start_key_slider = QSlider(Qt.Orientation.Horizontal)
-        self.start_key_slider.setRange(20, 80)
-        self.start_key_slider.setValue(60)
-        self.start_key_slider.valueChanged.connect(self._on_settings_changed)
-        self.start_key_value_label = QLabel("60")
-        settings_layout.addWidget(self.start_key_slider, 0, 1)
-        settings_layout.addWidget(self.start_key_value_label, 0, 2)
-
-        # Octave Range setting
-        settings_layout.addWidget(QLabel("Octave Range:"), 1, 0)
-        self.octave_range_slider = QSlider(Qt.Orientation.Horizontal)
-        self.octave_range_slider.setRange(1, 5)
-        self.octave_range_slider.setValue(1)
-        self.octave_range_slider.valueChanged.connect(self._on_settings_changed)
-        self.octave_range_value_label = QLabel("1")
-        settings_layout.addWidget(self.octave_range_slider, 1, 1)
-        settings_layout.addWidget(self.octave_range_value_label, 1, 2)
-
-        self.instrument_combo = QComboBox()
-        self.instrument_combo.addItems(INSTRUMENTS)
-        self.instrument_combo.setCurrentText(INSTRUMENTS[0])
-        self.instrument_combo.currentTextChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(QLabel("Instrument:"), 3, 0)
-        settings_layout.addWidget(self.instrument_combo, 3, 1, 1, 2)
-
-        # Scales selection
-        self.scale_combo = QComboBox()
-        self.scale_combo.addItems(get_scale_names())
-        self.scale_combo.setCurrentText(get_scale_names()[0])
-        self.scale_combo.currentTextChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(QLabel("Scale:"), 4, 0)
-        settings_layout.addWidget(self.scale_combo, 4, 1, 1, 2)
-
-        # Glide mode checkbox
-        self.glide_checkbox = QCheckBox("Advanced Mode")
-        self.glide_checkbox.setChecked(DEFAULT_GLIDE_MODE)
-        self.glide_checkbox.stateChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(self.glide_checkbox, 5, 0, 1, 3)
-
-        # Show guidelines
-        self.show_boundaries_checkbox = QCheckBox("Show Guide")
-        self.show_boundaries_checkbox.setChecked(True)
-        self.show_boundaries_checkbox.stateChanged.connect(self._on_settings_changed)
-        settings_layout.addWidget(self.show_boundaries_checkbox, 6, 0, 1, 3)
-
-        audio_layout.addWidget(settings_group)
-
-        # Instructions section
-        instructions_group = QGroupBox("Instructions")
-        instructions_layout = QVBoxLayout(instructions_group)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Instructions")
+        layout = QVBoxLayout(dialog)
 
         instructions = [
-            "Single-hand mode:",
-            "  • Move your hand left/right to control pitch",
-            "  • Move your hand up/down to control volume",
-            "Dual-hand mode:",
-            "  • Move right hand left/right to control pitch",
-            "  • Move left hand up/down to control volume",
+            "<b>Single-hand mode:</b>",
+            "• Move your hand left/right to control pitch",
+            "• Move your hand up/down to control volume",
+            "<b>Dual-hand mode:</b>",
+            "• Move right hand left/right to control pitch",
+            "• Move left hand up/down to control volume",
         ]
-
-        for instruction in instructions:
-            label = QLabel(instruction)
+        for line in instructions:
+            label = QLabel(line)
             label.setWordWrap(True)
-            instructions_layout.addWidget(label)
+            layout.addWidget(label)
 
-        audio_layout.addWidget(instructions_group)
-
-        exit_button = QPushButton("Exit")
-        exit_button.setFixedSize(100, 40)
-        exit_button.clicked.connect(self._on_exit_clicked)
-        exit_button.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9800;
-                color: white;
-                font-weight: bold;
-                border-radius: 18px;
-                padding: 8px 24px;
-                font-size: 16px;
-            }
-            QPushButton:hover {
-                background-color: #ffa733;
-                color: #fff;
-            }
-        """)
-        exit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        audio_layout.addWidget(exit_button, alignment=Qt.AlignmentFlag.AlignRight)
-
-        audio_layout.addStretch()
-        parent_layout.addWidget(audio_group)
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(dialog.accept)
+        layout.addWidget(close_btn)
+        dialog.setLayout(layout)
+        dialog.exec()
 
     def _display_image(self, image):
         """Display an image in the camera label."""
