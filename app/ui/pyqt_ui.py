@@ -211,6 +211,7 @@ class VelomaUI(QMainWindow):
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Instructions")
+        dialog.setFixedWidth(400)
         layout = QVBoxLayout(dialog)
 
         instructions = [
