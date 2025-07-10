@@ -118,9 +118,10 @@ class VelomaUI(QMainWindow):
         # Scale
         toolbar.addWidget(QLabel("Scale:"))
         self.scale_combo = QComboBox()
-        self.scale_combo.addItems(get_scale_names())
-        self.scale_combo.setCurrentText(get_scale_names()[0])
-        self.scale_combo.currentTextChanged.connect(self._on_settings_changed)
+        for key in get_scale_names():
+            self.scale_combo.addItem(self._get_scale_display_name(key), userData=key)
+        self.scale_combo.setCurrentIndex(0)
+        self.scale_combo.currentIndexChanged.connect(self._on_settings_changed)
         toolbar.addWidget(self.scale_combo)
         toolbar.addItem(
             QSpacerItem(10, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
@@ -302,7 +303,7 @@ class VelomaUI(QMainWindow):
                 "start_key": int(self.start_key_slider.value()),
                 "octave_range": int(self.octave_range_slider.value()),
                 "instrument": self.instrument_combo.currentText(),
-                "scale": self.scale_combo.currentText(),
+                "scale": self.scale_combo.currentData(),
                 "glide_mode": self.glide_checkbox.isChecked(),
                 "show_note_boundaries": self.show_boundaries_checkbox.isChecked(),
             }
@@ -374,3 +375,6 @@ class VelomaUI(QMainWindow):
         self.stop()
         if a0:
             a0.accept()
+
+    def _get_scale_display_name(self, key: str) -> str:
+        return " ".join(word.capitalize() for word in key.split("_"))
