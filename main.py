@@ -43,7 +43,6 @@ class VelomaApp:
 
     def _start_tracking(self) -> bool:
         """Start the hand tracking and audio synthesis."""
-        # Start camera
         if not self.hand_tracker.start_camera():
             print("Failed to start camera!")
             return False
@@ -135,55 +134,6 @@ class VelomaApp:
             self.instrument.update_from_vision({"hands": []})
             if frame is not None:
                 self.ui.camera_frame_signal.emit(frame)
-
-    # def _main_loop(self):
-    #     """Main processing loop"""
-    #     while self.is_running:
-    #         try:
-    #             hand_data = self.hand_tracker.get_hand_positions()
-    #             now = time.time()
-
-    #             frame = None
-    #             if hand_data:
-    #                 frame = hand_data.get('frame')
-
-    #             if hand_data and hand_data.get('hands'):
-    #                 self.last_hand_data = hand_data
-    #                 self.last_hand_time = now
-    #                 use_hand_data = hand_data
-    #             else:
-    #                 # Use cached hand data only if within timeout
-    #                 if self.last_hand_data and (now - self.last_hand_time) < self.hand_hold_timeout:
-    #                     use_hand_data = self.last_hand_data
-    #                 else:
-    #                     use_hand_data = None
-
-    #             if hand_data:
-    #                 self.instrument.update_from_vision(use_hand_data)
-    #                 if frame is not None:
-    #                     frame_with_landmarks = self.hand_tracker.draw_landmarks(frame, hand_data)
-    #                     if not self.instrument.glide_mode and self.show_note_boundaries:
-    #                         num_notes = len(self.instrument.pitch_pool)
-    #                         region_start = 0.5
-    #                         region_end = 1.0 - PITCH_X_MARGIN
-    #                         frame_with_landmarks = self.hand_tracker.draw_note_boundaries(
-    #                             frame_with_landmarks, num_notes, region_start, region_end
-    #                         )
-    #                     self.ui.camera_frame_signal.emit(frame_with_landmarks)
-    #                 self.ui.update_audio_params(
-    #                     self.instrument.current_pitch,
-    #                     self.instrument.current_volume
-    #                 )
-    #             else:
-    #                 # No valid hand data for too long: force note off
-    #                 self.instrument.update_from_vision({'hands': []})
-    #                 if frame is not None:
-    #                     self.ui.camera_frame_signal.emit(frame)
-
-    #             time.sleep(0.01)
-    #         except Exception as e:
-    #             print(f"Error in main loop: {e}")
-    #             time.sleep(0.1)
 
     def run(self):
         self.ui.run()

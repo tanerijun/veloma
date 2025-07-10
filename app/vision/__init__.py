@@ -159,10 +159,10 @@ class HandTracker:
                 x = int(landmark["x"] * w)
                 y = int(landmark["y"] * h)
                 if idx in FINGER_TIPS:
-                    color = (0, 128, 255)  # Orange for fingertips
+                    color = (0, 128, 255)  # orange for fingertips
                     radius = 7
                 else:
-                    color = (0, 255, 0)  # Green for joints
+                    color = (0, 255, 0)  # green for joints
                     radius = 5
                 cv2.circle(overlay, (x, y), radius, color, -1, cv2.LINE_AA)
 

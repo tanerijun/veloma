@@ -274,13 +274,13 @@ class VelomaUI(QMainWindow):
         error_image = np.zeros(
             (self.camera_height, self.camera_width, 3), dtype=np.uint8
         )
-        error_image[:, :] = [255, 0, 0]  # Red background
+        error_image[:, :] = [255, 0, 0]  # red background
 
-        # Add error stripes
+        # Error stripes
         for y in range(100, 150):
             for x in range(100, 400):
                 if (x + y) % 4 == 0:
-                    error_image[y, x] = [255, 255, 255]  # White stripes
+                    error_image[y, x] = [255, 255, 255]  # white stripes
 
         self._display_image(error_image)
 
@@ -298,7 +298,6 @@ class VelomaUI(QMainWindow):
 
     def _on_settings_changed(self):
         """Handle settings slider changes."""
-        # Update slider value labels
         if self.start_key_value_label and self.start_key_slider:
             self.start_key_value_label.setText(f"{self.start_key_slider.value()}")
         if self.octave_range_value_label and self.octave_range_slider:

@@ -51,12 +51,6 @@ def get_scale_names():
 
 # Paths to sound fonts
 current_dir = os.path.dirname(os.path.abspath(__file__))
-soundFontPath_theremin_high = os.path.join(
-    current_dir, "soundFonts", "theremin_high.sf2"
-)
-soundFontPath_theremin_trill = os.path.join(
-    current_dir, "soundFonts", "theremin_trill.sf2"
-)
 soundFontPath_7777777 = os.path.join(current_dir, "soundFonts", "7777777.sf2")
 
 
@@ -67,11 +61,9 @@ class VelomaInstrument:
         self.session = sc.Session()
         self.session.tempo = 120
 
-        # self.theremin = self.session.new_part("Sine Wave")
         self.theremin = self.session.new_part(INSTRUMENTS[0])
         self.theremin.send_midi_cc(64, 0)  # Sustain pedal off
 
-        # Audio parameters
         self.current_pitch = 60  # Middle C
         self.current_volume = 0.5
         self.target_pitch = 60.0
@@ -81,7 +73,6 @@ class VelomaInstrument:
         self.num_amplified_notes = 3  # number of notes playing at the same time
         self.is_note_playing = False
 
-        # Hand position mapping ranges
         self.glide_mode = DEFAULT_GLIDE_MODE
         self.start_key = 60.0
         self.octave_range = 1
@@ -95,7 +86,7 @@ class VelomaInstrument:
         )  # 12 semitones per octave
         self.volume_range = (0.0, 1.0)
 
-        # Smoothing parameters - much higher for real-time response
+        # Smoothing parameters
         self.pitch_smoothing = 1
         self.volume_smoothing = 1
 
@@ -103,7 +94,7 @@ class VelomaInstrument:
         self.audio_thread = None
         self.should_stop = False
         self.hands_detected = False
-        self.min_volume_threshold = 0.3  # Minimum volume to start / maintain note
+        self.min_volume_threshold = 0.3  # minimum volume to start / maintain note
 
         # Beginner mode
         self.note_played_recently = False
@@ -317,7 +308,7 @@ class VelomaInstrument:
             # All semitones in the range
             return [self.start_key + i for i in range(self.octave_range * 12 + 1)]
         else:
-            # Use the scale generator
+            # Use scale generator
             return [
                 pitch
                 for pitch in SCALES[scale_name](self.start_key)
