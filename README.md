@@ -19,6 +19,8 @@ Veloma uses webcam to track hand movements and translates them into musical expr
 - **Two Hand Mode**: Use both hands for advanced control over pitch and volume.
   - **Right Hand**: Controls pitch - move right hand left/right to change pitch.
   - **Left Hand**: Controls volume - move left hand up/down to adjust volume.
+- **Extra**:
+  - Make a fist or hold a finger close to palm center to replay last note.
 
 ### Features:
 
