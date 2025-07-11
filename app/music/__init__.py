@@ -308,12 +308,21 @@ class VelomaInstrument:
             # All semitones in the range
             return [self.start_key + i for i in range(self.octave_range * 12 + 1)]
         else:
-            # Use scale generator
-            return [
-                pitch
-                for pitch in SCALES[scale_name](self.start_key)
-                if pitch <= self.start_key + self.octave_range * 12.0
-            ]
+            pitch_pool = []
+            max_pitch = self.start_key + self.octave_range * 12.0
+            scale = SCALES[scale_name](self.start_key)
+
+            i = 0
+            while True:
+                pitch = scale[i]
+
+                if pitch > max_pitch:
+                    break
+
+                pitch_pool.append(pitch)
+                i += 1
+
+            return pitch_pool
 
     def set_instrument(self, instrument_name: str):
         self._stop_current_note()
@@ -329,6 +338,13 @@ class VelomaInstrument:
         self.theremin.send_midi_cc(64, 0)
         self.is_note_playing = False
         self.current_notes = []
+
+    def update_pitch_range(self, start_key: float, octave_range: int):
+        """Update the pitch range and regenerate pitch pool."""
+        self.start_key = start_key
+        self.octave_range = octave_range
+        self.pitch_range = (start_key, start_key + octave_range * 12)
+        # self.pitch_pool = self._generate_pitch_pool(self.scale_name)
 
     @staticmethod
     def _map_range(

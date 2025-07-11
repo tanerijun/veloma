@@ -320,7 +320,6 @@ class VelomaUI(QMainWindow):
             }
             self.on_settings_change_callback(settings)
 
-        self.octave_range_slider.setEnabled(not self.glide_checkbox.isChecked())
         self.scale_combo.setEnabled(not self.glide_checkbox.isChecked())
         self.instrument_combo.setEnabled(not self.glide_checkbox.isChecked())
 
