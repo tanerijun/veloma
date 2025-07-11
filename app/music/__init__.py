@@ -102,6 +102,7 @@ class VelomaInstrument:
         self.last_note_time = 0
         self.last_note_index = None
         self.last_pitch_x = None
+        self.right_hand_trigger = False
 
     def start_audio(self):
         """Start the audio processing thread."""
@@ -124,13 +125,9 @@ class VelomaInstrument:
             self.audio_thread.join(timeout=1.0)
 
     def update_from_vision(self, hand_data: Optional[Dict[str, Any]]):
-        """
-        Update audio parameters based on hand tracking data.
-        Args:
-            hand_data: Dictionary containing hand position information
-        """
         if not hand_data or not hand_data.get("hands"):
             self.hands_detected = False
+            self.right_hand_trigger = False
             return
 
         hands = hand_data["hands"]
@@ -143,22 +140,20 @@ class VelomaInstrument:
         block_width = region_width / num_notes
 
         if len(hands) >= 1:
-            # Use first hand for pitch control (vertical position)
             primary_hand = hands[0]
             palm_x, palm_y = primary_hand["palm_center"]
             self.last_pitch_x = palm_x
 
+            self.right_hand_trigger = primary_hand.get("trigger_gesture", False)
+
             if self.glide_mode:
-                # Continuous mapping
                 self.target_pitch = self._map_range(
                     palm_x, region_start, region_end, *self.pitch_range
                 )
             else:
-                # Discrete mapping: equal-width blocks for each note
-                x = max(region_start, min(region_end, palm_x))  # clamp palm_x to region
+                x = max(region_start, min(region_end, palm_x))
                 mapped_index = int((x - region_start) / block_width)
                 mapped_index = min(mapped_index, num_notes - 1)
-
                 self.target_pitch = self.pitch_pool[mapped_index]
 
             self.target_volume = self._map_range(
@@ -166,7 +161,6 @@ class VelomaInstrument:
             )
 
             if len(hands) >= 2:
-                # Assign right/left hands
                 if hands[0]["palm_center"][0] > hands[1]["palm_center"][0]:
                     right_hand = hands[0]
                     left_hand = hands[1]
@@ -178,13 +172,13 @@ class VelomaInstrument:
                 volume_y = left_hand["palm_center"][1]
 
                 self.last_pitch_x = pitch_x
+                self.right_hand_trigger = right_hand.get("trigger_gesture", False)
 
                 if self.glide_mode:
                     self.target_pitch = self._map_range(
                         pitch_x, region_start, region_end, *self.pitch_range
                     )
                 else:
-                    # Discrete mapping for two hands
                     x = max(region_start, min(region_end, pitch_x))
                     mapped_index = int((x - region_start) / block_width)
                     mapped_index = min(mapped_index, num_notes - 1)
@@ -193,6 +187,8 @@ class VelomaInstrument:
                 self.target_volume = self._map_range(
                     1.0 - volume_y, 0.0, 0.5, *self.volume_range
                 )
+        else:
+            self.right_hand_trigger = False
 
     def _audio_loop(self):
         """Main audio processing loop with real-time parameter updates."""
@@ -228,7 +224,7 @@ class VelomaInstrument:
                 block_width = region_width / num_notes
 
                 pitch_x = self.last_pitch_x
-
+                triggered = getattr(self, "right_hand_trigger", False)
                 if should_play and pitch_x is not None:
                     if pitch_x < region_start:
                         # Hand is left of the pitch region: reset and do not play
@@ -245,6 +241,7 @@ class VelomaInstrument:
                             and (
                                 self.last_note_index is None
                                 or note_index != self.last_note_index
+                                or (triggered and not self.last_trigger_state)
                             )
                             and now - self.last_note_time > self.note_play_cooldown
                         ):
@@ -253,8 +250,10 @@ class VelomaInstrument:
                             )
                             self.last_note_time = now
                             self.last_note_index = note_index
+                    self.last_trigger_state = triggered
                 else:
                     self.last_note_index = None
+                    self.last_trigger_state = False
 
             time.sleep(0.0001)
 

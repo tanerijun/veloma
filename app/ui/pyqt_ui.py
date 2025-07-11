@@ -234,6 +234,8 @@ class VelomaUI(QMainWindow):
             "<b>Dual-hand mode:</b>",
             "• Move right hand left/right to control pitch",
             "• Move left hand up/down to control volume",
+            "<b>Tips:</b>",
+            "• Make a fist or hold a finger close to palm center to replay last note",
         ]
         for line in instructions:
             label = QLabel(line)

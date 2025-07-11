@@ -125,6 +125,7 @@ class HandTracker:
                     "palm_center": palm_center,
                     "hand_index": idx,
                 }
+                hand_info["trigger_gesture"] = self.is_fingertip_near_palm(hand_info)
                 hand_data["hands"].append(hand_info)
         if self._on_hand_data:
             self._on_hand_data(hand_data)
@@ -189,3 +190,13 @@ class HandTracker:
             x_px = int(x_norm * w)
             cv2.line(frame, (x_px, 0), (x_px, h), color, 2)
         return frame
+
+    def is_fingertip_near_palm(self, hand_info, threshold=0.08):
+        # Returns True if any fingertip is close to palm center
+        palm_x, palm_y = hand_info["palm_center"]
+        for tip_idx in [4, 8, 12, 16, 20]:
+            tip = hand_info["landmarks"][tip_idx]
+            dist = ((tip["x"] - palm_x) ** 2 + (tip["y"] - palm_y) ** 2) ** 0.5
+            if dist < threshold:
+                return True
+        return False
