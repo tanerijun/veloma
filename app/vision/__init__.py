@@ -120,9 +120,11 @@ class HandTracker:
                         {"x": landmark.x, "y": landmark.y, "z": landmark.z}
                     )
                 palm_center = self._calculate_palm_center(landmark_list)
+                rightmost_x = max(lm["x"] for lm in landmark_list)
                 hand_info = {
                     "landmarks": landmark_list,
                     "palm_center": palm_center,
+                    "rightmost_x": rightmost_x,
                     "hand_index": idx,
                 }
                 hand_info["trigger_gesture"] = self.is_fingertip_near_palm(hand_info)

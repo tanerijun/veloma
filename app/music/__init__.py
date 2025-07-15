@@ -141,23 +141,23 @@ class VelomaInstrument:
 
         if len(hands) >= 1:
             primary_hand = hands[0]
-            palm_x, palm_y = primary_hand["palm_center"]
-            self.last_pitch_x = palm_x
+            pitch_x = primary_hand.get("rightmost_x", primary_hand["palm_center"][0])
+            self.last_pitch_x = pitch_x
 
             self.right_hand_trigger = primary_hand.get("trigger_gesture", False)
 
             if self.glide_mode:
                 self.target_pitch = self._map_range(
-                    palm_x, region_start, region_end, *self.pitch_range
+                    pitch_x, region_start, region_end, *self.pitch_range
                 )
             else:
-                x = max(region_start, min(region_end, palm_x))
+                x = max(region_start, min(region_end, pitch_x))
                 mapped_index = int((x - region_start) / block_width)
                 mapped_index = min(mapped_index, num_notes - 1)
                 self.target_pitch = self.pitch_pool[mapped_index]
 
             self.target_volume = self._map_range(
-                1.0 - palm_y, 0.0, 0.5, *self.volume_range
+                1.0 - primary_hand["palm_center"][1], 0.0, 0.5, *self.volume_range
             )
 
             if len(hands) >= 2:
@@ -168,7 +168,7 @@ class VelomaInstrument:
                     right_hand = hands[1]
                     left_hand = hands[0]
 
-                pitch_x = right_hand["palm_center"][0]
+                pitch_x = right_hand.get("rightmost_x", right_hand["palm_center"][0])
                 volume_y = left_hand["palm_center"][1]
 
                 self.last_pitch_x = pitch_x
