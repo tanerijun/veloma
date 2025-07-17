@@ -41,3 +41,4 @@ If using `uv`:
 ## Demo
 
 ![Demo](screenshots/app_demo.png)
+![Demo Video](screenshots/app_demo.mp4)
